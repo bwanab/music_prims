@@ -1,7 +1,7 @@
 defmodule MusicPrims do
   require Logger
 
-  @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :Ab, :Eb, :Bb, :F]
+  @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
   @pent_intervals [0, 3, 5, 7, 10]
   @blues_intervals [0, 3, 5, 6, 7, 10]
   @major_intervals [0, 2, 4, 5, 7, 9, 11]
@@ -21,17 +21,27 @@ defmodule MusicPrims do
     Enum.at(@circle_of_fifths, n_sharps_flats+3)
   end
 
-  def next_nth(key, circle) do
+  def gt(key1, key2) do
+    Logger.info("#{key1} #{@midi_notes_map[key1]} #{key2} #{@midi_notes_map[key2]}")
+    @midi_notes_map[key1] > @midi_notes_map[key2]
+  end
+
+  @doc """
+  Kind of arbitrary that the octave cutoff is always at C.
+  """
+  def next_nth({key, octave}, circle) do
     index = Enum.find_index(circle, fn x -> x == key end) + 1
-    Enum.at(circle, if index >= length(circle) do 0 else index end)
+    new_key = Enum.at(circle, if index >= length(circle) do 0 else index end)
+    octave_up = if gt(key, new_key) do 1 else 0 end
+    {new_key, octave + octave_up}
+   end
+
+  def next_fifth({key, octave}) do
+    next_nth({key, octave}, @circle_of_fifths)
   end
 
-  def next_fifth(key) do
-    next_nth(key, @circle_of_fifths)
-  end
-
-  def next_fourth(key) do
-    next_nth(key, Enum.reverse(@circle_of_fifths))
+  def next_fourth({key, octave}) do
+    next_nth({key, octave}, Enum.reverse(@circle_of_fifths))
   end
 
   def rotate(scale, by) do
@@ -96,6 +106,18 @@ defmodule MusicPrims do
     |> build_scale(key, @major_intervals, octave)
   end
 
+  def major_scale(key, octave \\ 0) do
+    scale(key, :major, octave)
+  end
+
+  def minor_scale(key, octave \\ 0) do
+    scale(key, :minor, octave)
+  end
+
+  def dorian_scale(key, octave \\ 0) do
+    scale(key, :dorian, octave)
+  end
+
   def blues_scale(key, octave \\ 0) do
     build_scale(key, key, @blues_intervals, octave)
   end
@@ -111,7 +133,21 @@ defmodule MusicPrims do
     |> adjust_octave(octave)
   end
 
+  @doc """
+  produces a sequence of midi notes for the given scale function(f) in the key
+  with num octaves.
 
+  Example:
+
+  MusicPrims.scale_seq(:D, 4, &MusicPrims.pent_scale/2)
+  [26, 29, 31, 33, 36, 38, 41, 43, 45, 48, 50, 53, 55, 57, 60, 62, 65, 67, 69, 72,
+   74, 77, 79, 81, 84]
+
+  """
+  def scale_seq(key, num, f) do
+    Enum.map(0..num, fn x -> Enum.map(f.(key, x), fn {_, m} -> m end) end)
+    |> List.flatten
+  end
 
   def scale_notes(scale) do
     Enum.map(scale, fn interval -> Enum.at(@midi_notes, interval) end)
