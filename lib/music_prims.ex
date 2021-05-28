@@ -2,18 +2,17 @@ defmodule MusicPrims do
   require Logger
 
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
+  @circle_of_fourths [:C] ++ Enum.reverse(Enum.drop(@circle_of_fifths, 1))
   @pent_intervals [0, 3, 5, 7, 10]
   @blues_intervals [0, 3, 5, 6, 7, 10]
   @major_intervals [0, 2, 4, 5, 7, 9, 11]
   @modes [:major, :dorian, :phrygian, :lydian, :mixolodian, :minor, :lociran]
   @scale_intervals Enum.into(Enum.zip(@modes, @major_intervals), %{})
-
-  @midi_notes [{:C, 24}, {:C!, 25}, {:D, 26}, {:D!, 27}, {:E, 28}, {:F, 29}, {:F!, 30},
-               {:G, 31}, {:G!, 32}, {:A, 33}, {:A!, 34}, {:B, 35}]
+  @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
+  @midi_notes Enum.with_index(@notes) |> Enum.map(fn {a, b} -> {a, b+24} end)
 
   @notes_by_midi Enum.into(Enum.map(@midi_notes, fn {note, midi} -> {midi, note} end), %{})
   @midi_notes_map Enum.into(@midi_notes, %{})
-  @circle_of_fourths [:C] ++ Enum.reverse(Enum.drop(@circle_of_fifths, 1))
 
   @spec key(:major | :minor, integer, :sharps | :flats) :: atom
   def key(mode, n_accidentals, which) when mode == :major and which == :sharps do
@@ -29,9 +28,18 @@ defmodule MusicPrims do
     Enum.at(@circle_of_fourths, n_accidentals+3)
   end
 
+  @spec circle_of_5ths() :: [atom]
+  def circle_of_5ths() do
+    @circle_of_fifths
+  end
+  @spec circle_of_4ths() :: [atom]
+  def circle_of_4ths() do
+    @circle_of_fourths
+  end
+
   @spec gt(atom, atom) :: boolean
   def gt(key1, key2) do
-    Logger.info("#{key1} #{@midi_notes_map[key1]} #{key2} #{@midi_notes_map[key2]}")
+    # Logger.info("#{key1} #{@midi_notes_map[key1]} #{key2} #{@midi_notes_map[key2]}")
     @midi_notes_map[key1] > @midi_notes_map[key2]
   end
 
@@ -44,7 +52,7 @@ defmodule MusicPrims do
     new_key = Enum.at(circle, if index >= length(circle) do 0 else index end)
     octave_up = if gt(key, new_key) do 1 else 0 end
     {new_key, octave + octave_up}
-   end
+    end
 
   @spec next_fifth({atom, integer}) :: {atom, integer}
   def next_fifth({key, octave}) do
