@@ -3,6 +3,8 @@ defmodule MusicPrims do
 
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
   @circle_of_fourths [:C] ++ Enum.reverse(Enum.drop(@circle_of_fifths, 1))
+
+  # scale intervals
   @pent_intervals [0, 3, 5, 7, 10]
   @blues_intervals [0, 3, 5, 6, 7, 10]
   @major_intervals [0, 2, 4, 5, 7, 9, 11]
@@ -13,6 +15,12 @@ defmodule MusicPrims do
 
   @notes_by_midi Enum.into(Enum.map(@midi_notes, fn {note, midi} -> {midi, note} end), %{})
   @midi_notes_map Enum.into(@midi_notes, %{})
+
+  # chord intervals
+  @major_triad [0, 4, 7]
+  @minor_triad [0, 3, 7]
+  @augmented_triad [0, 4, 8]
+  @diminished_triad [0, 3, 6]
 
   @spec key(:major | :minor, integer, :sharps | :flats) :: atom
   def key(mode, n_accidentals, which) when mode == :major and which == :sharps do
@@ -64,7 +72,7 @@ defmodule MusicPrims do
     next_nth({key, octave}, @circle_of_fourths)
   end
 
-  @spec rotate([{atom, integer}], integer) :: keyword(integer)
+  @spec rotate(keyword(integer), integer) :: keyword(integer)
   def rotate(scale, by) do
     Enum.drop(scale, by) ++ Enum.take(scale, by)
   end
@@ -166,6 +174,34 @@ defmodule MusicPrims do
     |> raw_scale(intervals)
     |> rotate_octave_around(key)
     |> adjust_octave(octave)
+  end
+
+  @spec major_chord(atom, integer) :: keyword(integer)
+  def major_chord(key, octave \\ 0) do
+    build_scale(key, key, @major_triad, octave)
+  end
+  @spec minor_chord(atom, integer) :: keyword(integer)
+  def minor_chord(key, octave \\ 0) do
+    build_scale(key, key, @minor_triad, octave)
+  end
+
+  @spec octave_up(keyword(integer), integer) :: keyword(integer)
+  def octave_up(chord, pos) do
+    note = Enum.at(chord, pos)
+    List.replace_at(chord, pos, {elem(note, 0), elem(note, 1) + 12})
+  end
+
+  @spec first_inversion(keyword(integer)) :: keyword(integer)
+  def first_inversion(scale) do
+    rotate(scale, 1)
+    |> octave_up(2)
+  end
+
+  @spec second_inversion(keyword(integer)) :: keyword(integer)
+  def second_inversion(scale) do
+    rotate(scale, 2)
+    |> octave_up(1)
+    |> octave_up(2)
   end
 
   @doc """
