@@ -1,5 +1,18 @@
+# defmodule MusicPrims.Note do
+#   defstruct note: :C,
+#     octave: 0
+#   @type t :: %__MODULE__{note: atom,
+#                          octave: integer
+#   }
+# end
+
 defmodule MusicPrims do
   require Logger
+
+  @type note :: {atom, integer}
+  @type note_sequence :: keyword(integer)
+  @type scale :: note_sequence
+  @type chord :: note_sequence
 
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
   @circle_of_fourths [:C] ++ Enum.reverse(Enum.drop(@circle_of_fifths, 1))
@@ -8,7 +21,7 @@ defmodule MusicPrims do
   @pent_intervals [0, 3, 5, 7, 10]
   @blues_intervals [0, 3, 5, 6, 7, 10]
   @major_intervals [0, 2, 4, 5, 7, 9, 11]
-  @modes [:major, :dorian, :phrygian, :lydian, :mixolodian, :minor, :lociran]
+  @modes [major: 0, dorian: 1, phrygian: 2, lydian: 3, mixolodian: 4, minor: 5,lociran: 6]
   @scale_intervals Enum.into(Enum.zip(@modes, @major_intervals), %{})
   @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
   @midi_notes Enum.with_index(@notes) |> Enum.map(fn {a, b} -> {a, b+24} end)
@@ -16,11 +29,26 @@ defmodule MusicPrims do
   @notes_by_midi Enum.into(Enum.map(@midi_notes, fn {note, midi} -> {midi, note} end), %{})
   @midi_notes_map Enum.into(@midi_notes, %{})
 
+  # interesting intervals
+  @minor_7th 10
+  @major_7th 11
+  @diminished_7th 9
+
+
   # chord intervals
   @major_triad [0, 4, 7]
   @minor_triad [0, 3, 7]
   @augmented_triad [0, 4, 8]
   @diminished_triad [0, 3, 6]
+
+  @dominant_seventh @major_triad ++ [@minor_7th]
+  @major_seventh @major_triad ++ [@major_7th]
+  @minor_seventh @minor_triad ++ [@minor_7th]
+  @half_diminshed_seventh @diminished_triad ++ [@minor_7th]
+  @diminished_seventh @diminished_triad ++ [@diminished_7th]
+  @minor_major_seventh @minor_triad ++ [@major_7th]
+  @augmented_major_seventh @augmented_triad ++ [@major_7th]
+  @augmented_seventh @augmented_triad ++ [@minor_7th]
 
   @spec key(:major | :minor, integer, :sharps | :flats) :: atom
   def key(mode, n_accidentals, which) when mode == :major and which == :sharps do
@@ -37,13 +65,10 @@ defmodule MusicPrims do
   end
 
   @spec circle_of_5ths() :: [atom]
-  def circle_of_5ths() do
-    @circle_of_fifths
-  end
+  def circle_of_5ths() do @circle_of_fifths end
+
   @spec circle_of_4ths() :: [atom]
-  def circle_of_4ths() do
-    @circle_of_fourths
-  end
+  def circle_of_4ths() do @circle_of_fourths end
 
   @spec gt(atom, atom) :: boolean
   def gt(key1, key2) do
@@ -72,12 +97,28 @@ defmodule MusicPrims do
     next_nth({key, octave}, @circle_of_fourths)
   end
 
-  @spec rotate(keyword(integer), integer) :: keyword(integer)
-  def rotate(scale, by) do
-    Enum.drop(scale, by) ++ Enum.take(scale, by)
+  @spec next_half_step({atom, integer}) :: {atom, integer}
+  def next_half_step({key, octave}) do
+    next_nth({key, octave}, @notes)
   end
 
-  @spec rotate_octave(keyword(integer), integer) :: keyword(integer)
+  @spec rotate([integer], integer) :: [integer]
+  def rotate(intervals, by) do
+    Enum.drop(intervals, by) ++ (Enum.take(intervals, by) |> Enum.map(&(&1 + 12)))
+  end
+
+  @spec rotate_zero([integer], integer) :: [integer]
+  def rotate_zero(intervals, by) do
+    [f|r] = rotate(intervals, by)
+    [0|Enum.map(r, &(&1 - f))]
+  end
+
+  @spec rotate_notes([note], integer) :: [note]
+  def rotate_notes(notes, by) do
+    Enum.drop(notes, by) ++ (Enum.take(notes, by) |> Enum.map(fn {n, o} -> {n, o + 1} end))
+  end
+
+  @spec rotate_octave(note_sequence, integer) :: note_sequence
   def rotate_octave([f|rest], by) when is_tuple(f) do
     scale = [f|rest]
     Enum.drop(scale, by) ++ Enum.map(Enum.take(scale, by), fn {note, midi} -> {note, midi + 12} end)
@@ -87,18 +128,25 @@ defmodule MusicPrims do
     Enum.drop(scale, by) ++ Enum.map(Enum.take(scale, by), fn midi -> midi + 12 end)
   end
 
-  @spec rotate_octave_around(keyword(integer), atom) :: keyword(integer)
+  @spec rotate_octave_around(note_sequence, atom) :: note_sequence
   def rotate_octave_around([f|rest], key) when is_tuple(f) do
     scale = [f|rest]
     rotate_octave(scale, Enum.find_index(scale, fn {note, _} -> note == key end))
   end
 
-  @spec chromatic_scale(atom) :: keyword(integer)
-  def chromatic_scale(key) do
-    midi = @midi_notes_map[key]
-    cmidi = @midi_notes_map[:C]
-    interval = midi - cmidi
-    rotate_octave(@midi_notes, interval)
+  @spec to_midi(note) :: integer
+  def to_midi({n, o}) do
+    @midi_notes_map[n] + o * 12
+  end
+
+  @spec to_midi(note_sequence) :: [integer]
+  def to_midi(notes) do
+    Enum.map(notes, fn n -> to_midi(n) end)
+  end
+
+  @spec chromatic_scale(note) :: scale
+  def chromatic_scale(note) do
+    Stream.iterate(note, fn a -> next_half_step(a) end) |> Enum.take(12)
   end
 
   # def scale_interval(scale, interval) do
@@ -127,81 +175,146 @@ defmodule MusicPrims do
     @notes_by_midi[if index >= 24 do index else index + 12 end]
   end
 
-  @spec raw_scale(keyword(integer), [integer]) :: keyword(integer)
+  @spec raw_scale(scale, [integer]) :: scale
   def raw_scale(chromatic_scale, intervals) do
-    Enum.map(intervals, fn interval -> Enum.at(chromatic_scale, interval) end)
+    Enum.map(intervals, fn interval ->
+      if interval < 12 do
+        Enum.at(chromatic_scale, interval)
+      else
+        Enum.at(chromatic_scale, interval - 12)
+        |> octave_up
+      end
+    end)
   end
 
-  @spec adjust_octave(keyword(integer), integer) :: keyword(integer)
+  @spec adjust_octave(scale, integer) :: scale
   def adjust_octave(scale, octave) when octave == 0 do scale end
   def adjust_octave(scale, octave) do
     Enum.map(scale, fn {note, midi} -> {note, midi + 12 * octave} end)
   end
 
-  def scale(key, mode \\ :major, octave \\ 0) do
-    major_key(key, mode)
-    |> build_scale(key, @major_intervals, octave)
-  end
+  # def scale(key, mode \\ :major, octave \\ 0) do
+  #   major_key(key, mode)
+  #   |> build_note_seq(key, @major_intervals, octave)
+  # end
 
-  @spec major_scale(atom, integer) :: keyword(integer)
+  @spec major_scale(atom, integer) :: scale
   def major_scale(key, octave \\ 0) do
-    scale(key, :major, octave)
+    build_note_seq(key, @major_intervals, octave)
   end
 
-  @spec minor_scale(atom, integer) :: keyword(integer)
+  @spec minor_scale(atom, integer) :: note_sequence
   def minor_scale(key, octave \\ 0) do
-    scale(key, :minor, octave)
+    build_note_seq(key, @major_intervals |> rotate_zero(@modes[:minor]) , octave)
   end
 
-  @spec dorian_scale(atom, integer) :: keyword(integer)
+  @spec dorian_scale(atom, integer) :: note_sequence
   def dorian_scale(key, octave \\ 0) do
-    scale(key, :dorian, octave)
+    build_note_seq(key, @major_intervals |> rotate_zero(@modes[:dorian]) , octave)
   end
 
-  @spec blues_scale(atom, integer) :: keyword(integer)
+  @spec blues_scale(atom, integer) :: note_sequence
   def blues_scale(key, octave \\ 0) do
-    build_scale(key, key, @blues_intervals, octave)
+    build_note_seq(key, @blues_intervals, octave)
   end
 
-  @spec pent_scale(atom, integer) :: keyword(integer)
+  @spec pent_scale(atom, integer) :: note_sequence
   def pent_scale(key, octave \\ 0) do
-    build_scale(key, key, @pent_intervals, octave)
+    build_note_seq(key, @pent_intervals, octave)
   end
 
-  @spec build_scale(atom, atom, [integer], integer) :: keyword(integer)
-  def build_scale(chrome_key, key, intervals, octave \\ 0) do
-    chromatic_scale(chrome_key)
+  @spec build_note_seq(atom, [integer], integer) :: note_sequence
+  def build_note_seq(chrome_key, intervals, octave \\ 0) do
+    chromatic_scale({chrome_key, octave})
     |> raw_scale(intervals)
-    |> rotate_octave_around(key)
-    |> adjust_octave(octave)
   end
 
-  @spec major_chord(atom, integer) :: keyword(integer)
+  @spec major_chord(atom, integer) :: note_sequence
   def major_chord(key, octave \\ 0) do
-    build_scale(key, key, @major_triad, octave)
+    build_note_seq(key, @major_triad, octave)
   end
-  @spec minor_chord(atom, integer) :: keyword(integer)
+
+  @spec minor_chord(atom, integer) :: note_sequence
   def minor_chord(key, octave \\ 0) do
-    build_scale(key, key, @minor_triad, octave)
+    build_note_seq(key, @minor_triad, octave)
   end
 
-  @spec octave_up(keyword(integer), integer) :: keyword(integer)
+  @spec augmented_chord(atom, integer) :: note_sequence
+  def augmented_chord(key, octave \\ 0) do
+    build_note_seq(key, @augmented_triad, octave)
+  end
+
+  @spec diminished_chord(atom, integer) :: note_sequence
+  def diminished_chord(key, octave \\ 0) do
+    build_note_seq(key, @diminished_triad, octave)
+  end
+
+  @spec dominant_seventh_chord(atom, integer) :: note_sequence
+  def dominant_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @dominant_seventh, octave)
+  end
+
+  @spec major_seventh_chord(atom, integer) :: note_sequence
+  def major_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @major_seventh, octave)
+  end
+
+  @spec minor_seventh_chord(atom, integer) :: note_sequence
+  def minor_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @minor_seventh, octave)
+  end
+
+  @spec half_diminshed_seventh_chord(atom, integer) :: note_sequence
+  def half_diminshed_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @half_diminshed_seventh, octave)
+  end
+
+  @spec diminished_seventh_chord(atom, integer) :: note_sequence
+  def diminished_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @diminished_seventh, octave)
+  end
+
+  @spec minor_major_seventh_chord(atom, integer) :: note_sequence
+  def minor_major_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @minor_major_seventh, octave)
+  end
+
+  @spec augmented_major_seventh_chord(atom, integer) :: note_sequence
+  def augmented_major_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @augmented_major_seventh, octave)
+  end
+
+  @spec augmented_seventh_chord(atom, integer) :: note_sequence
+  def augmented_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, @augmented_seventh, octave)
+  end
+
+  @spec octave_up(note) :: note
+  def octave_up({note, octave}) do
+    {note, octave + 1}
+  end
+
+  @spec octave_up(note_sequence, integer) :: note_sequence
   def octave_up(chord, pos) do
-    note = Enum.at(chord, pos)
-    List.replace_at(chord, pos, {elem(note, 0), elem(note, 1) + 12})
+    List.replace_at(chord, pos, Enum.at(chord, pos) |> octave_up)
   end
 
-  @spec first_inversion(keyword(integer)) :: keyword(integer)
-  def first_inversion(scale) do
-    rotate(scale, 1)
-    |> octave_up(2)
+  @spec first_inversion(note_sequence) :: note_sequence
+  def first_inversion(chord) do
+    rotate_notes(chord, 1)
   end
 
-  @spec second_inversion(keyword(integer)) :: keyword(integer)
-  def second_inversion(scale) do
-    rotate(scale, 2)
-    |> octave_up(1)
-    |> octave_up(2)
+  @spec second_inversion(note_sequence) :: note_sequence
+  def second_inversion(chord) do
+    rotate_notes(chord, 2)
+  end
+
+  @doc """
+  Used with chords that are larger than triads.
+  """
+  @spec third_inversion(note_sequence) :: note_sequence
+  def third_inversion(chord) do
+    rotate_notes(chord, 3)
   end
 
   @doc """
@@ -221,7 +334,7 @@ defmodule MusicPrims do
     |> List.flatten
   end
 
-  @spec scale_notes([integer]) :: keyword(integer)
+  @spec scale_notes([integer]) :: note_sequence
   def scale_notes(intervals) do
     Enum.map(intervals, fn interval -> Enum.at(@midi_notes, interval) end)
   end
