@@ -198,6 +198,13 @@ defmodule MusicPrims do
   #   |> build_note_seq(key, @major_intervals, octave)
   # end
 
+  @spec major_intervals_map() :: %{integer => integer}
+  def major_intervals_map() do
+    Enum.with_index(@major_intervals)
+    |> Enum.map(fn {interval, idx} -> {idx, interval} end)
+    |> Enum.into(%{})
+  end
+
   @spec major_scale(atom, integer) :: scale
   def major_scale(key, octave \\ 0) do
     build_note_seq(key, @major_intervals, octave)

@@ -1,6 +1,7 @@
 defmodule MusicPrimsTest do
   use ExUnit.Case
   import MusicPrims
+  import ChordPrims
   doctest MusicPrims
 
   describe "scale tests" do
@@ -69,6 +70,10 @@ defmodule MusicPrimsTest do
       assert major_scale(:C) |> to_midi == [24, 26, 28, 29, 31, 33, 35]
       assert major_seventh_chord(:F) |> to_midi == [29, 33, 36, 40]
       assert major_seventh_chord(:F) |> third_inversion |> to_midi == [40, 41, 45, 48]
+    end
+
+    test "chord sequence reification" do
+      assert chord_syms_to_chords([:I, :IV, :vi, :V], :C) == [{:C, :major}, {:F, :major}, {:A, :minor}, {:G, :major}]
     end
 
   end
