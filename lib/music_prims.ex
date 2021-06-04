@@ -1,11 +1,3 @@
-# defmodule MusicPrims.Note do
-#   defstruct note: :C,
-#     octave: 0
-#   @type t :: %__MODULE__{note: atom,
-#                          octave: integer
-#   }
-# end
-
 defmodule MusicPrims do
   require Logger
 
@@ -15,6 +7,9 @@ defmodule MusicPrims do
   @type chord :: note_sequence
 
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
+
+
+
   @circle_of_fourths [:C] ++ Enum.reverse(Enum.drop(@circle_of_fifths, 1))
 
   # scale intervals
@@ -337,8 +332,9 @@ defmodule MusicPrims do
   """
   @spec scale_seq(atom, integer, fun) :: [integer]
   def scale_seq(key, num, f) do
-    Enum.map(0..num, fn x -> Enum.map(f.(key, x), fn {_, m} -> m end) end)
+    Enum.map(0..num, fn x -> f.(key, x) end)
     |> List.flatten
+    |> to_midi
   end
 
   @spec scale_notes([integer]) :: note_sequence
@@ -355,5 +351,14 @@ defmodule MusicPrims do
   def scale_notes_midi(scale) do
     Enum.map(scale_notes(scale), fn {_note, midi} -> midi end)
   end
+
+  def is_note({n, o}) do
+    Enum.any?(circle_of_5ths(), &(&1 == n)) and is_integer(o)
+  end
+
+  def note_to_string({n, _o}) do
+    inspect(n) |> String.replace("!", "#") |> String.replace(":", "")
+  end
+
 
 end
