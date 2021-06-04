@@ -1,6 +1,6 @@
-#+TITLE: MusicPrims - Music Primatives
+#+TITLE: MusicPrims - Music Primitives
 
-This is a collection of music primatives implemented in Elixir.
+This is a collection of music primitives implemented in Elixir.
 
 Definitions:
 
