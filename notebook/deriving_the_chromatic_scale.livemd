@@ -1,0 +1,100 @@
+# Deriving the chromatic scale.
+
+## Introduction
+
+I'm going to derive the chromatic scale mathematically as a function of the frequencies that are
+encountered in the circle of fifths.
+
+In order to be able to evaluate this notebook, you'll need to clone [https://github.com/bwanab/music_prims](https://github.com/bwanab/music_prims) and
+connect to it as a mix runtime.
+
+## Circle of fifths from first principles
+
+The definition is the fifth above the fifth above the fifth infinitum.
+
+Let's start with the frequency of a low A = 110
+
+```elixir
+a = 110
+```
+
+We know that the octave up is A *2 or 220. We might have learned in physics class that the
+  first harmonic after the octave is the fifth which is A* 1.5, thus the following function:
+
+```elixir
+defmodule CircleFifthsFirstPrinciples do
+  def fifth_above(a, b \\ 1.5) do
+    v = a * b
+    # here we're constraining the values to stay in the first octave
+    if v > 225 do
+      v / 2
+    else
+      v
+      # in other words, we're wrapping around.
+    end
+  end
+
+  def circle_of_fifths(a, f) do
+    Stream.iterate(a, &f.(&1)) |> Enum.take(13)
+  end
+end
+```
+
+But, when we evaluate:
+
+```elixir
+import CircleFifthsFirstPrinciples
+
+circle_of_fifths(a, &fifth_above/1)
+```
+
+The last value that you can see is 223.00015 should be the same as the starting value times two (220), but it's not. Why? I don't know - physlcs.
+  Sabine Hossenfelder has written a book ([https://www.amazon.com/Lost-Math-Beauty-Physics-Astray/dp/0465094252](https://www.amazon.com/Lost-Math-Beauty-Physics-Astray/dp/0465094252))
+  that argues the universe doesn't owe us the beauty of small numbers. What we have above is *just intonation*([https://en.wikipedia.org/wiki/Just_intonation)-](https://en.wikipedia.org/wiki/Just_intonation)-) where the notes
+  are determined by small integer ratios. The way this was solved for centuries was to tune the 
+  octave to a true octave tuning which lead to one very noticeable off-pitch interval which was known as the 
+  *wolf interval*.
+
+When one solves for the factor that gives the correct octave value it turns out to be
+  1.498307077 ([https://en.wikipedia.org/wiki/Circle_of_fifths).](https://en.wikipedia.org/wiki/Circle_of_fifths).) This process
+  is known as equal tempering. Basically, all intervals are minutely out of tune but resulting
+  in no obviously out of pitch breaks.
+
+```elixir
+defmodule BetterFifth do
+  def better_fifth_above(a) do
+    fifth_above(a, 1.498307077)
+  end
+end
+```
+
+```elixir
+import BetterFifth
+
+circle_of_fifths(a, &better_fifth_above/1)
+```
+
+Now it looks right. The last value is well within the scope of human hearing to the double of the frequency of the root a.
+
+What does the circle of fifths tell us? Once we've solved for the correct factor, we have a series
+of note frequencies such that each one is a fifth above the previous in exactly twelve steps
+to the octave up. If we sort those values we get the classic twelve note chromatic scale:
+
+```elixir
+circle_of_fifths(110, &better_fifth_above/1) |> Enum.sort()
+```
+
+## The chromatic scale
+
+Given the circle of fifths, thus constrained, if we sort the values from low to high we 
+now have the complete chromatic scale from A-110 to A-220. In other words, by computing 
+circle of fifths, we've defined the twelve notes that are used for virtually all western 
+music.
+
+```elixir
+import MusicPrims
+
+circle_of_fifths(110, &better_fifth_above/1)
+|> Enum.sort()
+|> Enum.zip(Enum.map(chromatic_scale({:A, 0}), &note_to_string(&1)))
+```

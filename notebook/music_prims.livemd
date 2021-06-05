@@ -1,0 +1,139 @@
+# Music primitives
+
+## Definitions
+
+## Scales
+
+This is a demonstration of the functions from MusicPrims. First thing we'll do is import it.
+
+```elixir
+import MusicPrims
+```
+
+When we compute a major scale we get a list of notes. Each note is a tuple of {key, octave}. Since we didn't specify
+an octave, we get octave 0 which is a pretty low C.
+
+```elixir
+major_scale(:C)
+```
+
+Let's do the same thing with a different octave.
+
+```elixir
+major_scale(:C, 4)
+```
+
+Middle C on a piano is {:C, 4}. This is denoted as midi note 60.
+
+```elixir
+{:C, 4} |> to_midi
+```
+
+The key of F major has one flat.
+
+```elixir
+major_scale(:F)
+```
+
+The key of G majore has one sharp
+
+```elixir
+major_scale(:G)
+```
+
+We can determine which key we're playing from the number of sharps or flats, depending on the scale type.
+
+```elixir
+key(:major, 0, :sharps)
+```
+
+```elixir
+key(:minor, 0, :flats)
+```
+
+For any note, we might want to know the fifth above.
+
+```elixir
+next_fifth({:C, 1})
+```
+
+```elixir
+next_fifth({:G, 1})
+```
+
+We also might want to know the next fourth, which for G is C
+
+```elixir
+next_fourth({:G, 0})
+```
+
+Thus, the next fourth of the next fifth brings us back to the starting point one octave higher.
+
+```elixir
+next_fifth({:C, 1}) |> next_fourth
+```
+
+To compute the circle of fifths, we iterate on the next_fifth:
+
+```elixir
+Stream.iterate({:C, 1}, &next_fifth(&1)) |> Enum.take(12)
+```
+
+```elixir
+chromatic_scale({:C, 0}) |> Enum.take(4)
+```
+
+## Chords
+
+Chord follow a similar computational pattern as scales
+
+```elixir
+major_chord(:F)
+```
+
+The same chord with the first inversion.
+
+```elixir
+major_chord(:F) |> first_inversion
+```
+
+```elixir
+major_chord(:F) |> second_inversion
+```
+
+```elixir
+major_seventh_chord(:F)
+```
+
+## Midi
+
+We've already seen to_midi for a single note. It's also defined for note sequences like chords and scales.
+
+```elixir
+major_seventh_chord(:F) |> to_midi
+```
+
+## Chord patterns
+
+```elixir
+import ChordPrims
+```
+
+```elixir
+chord_syms_to_chords([:I, :IV, :vi, :V], :G)
+```
+
+```elixir
+Enum.map(chord_syms_to_chords([:I, :IV, :vi, :V], :G), &chord_to_notes(&1))
+```
+
+```elixir
+Enum.map(
+  chord_syms_to_chords([:I, :IV, :vi, :V], :G),
+  &(chord_to_notes(&1)
+    |> to_midi
+    |> Enum.map(fn a -> to_string(a) end))
+)
+```
+
+

@@ -4,7 +4,8 @@ This is a collection of music primitives implemented in Elixir.
 
 Definitions:
 
-+ The keys at present are A,A!,B,C,C!...G,G! where the ! represents the sharp sign. No flats. Yes, I know it doesn't make sense but that's where I am with it.
++ The keys at present are :A,:A!,:B,:C,:C!...:G,:G! where the ! represents the sharp sign. It handles flats with :A,:Bb,:B,:C,:Db... where flats are normally
+  expected.
 
 + Note is a tuple pair {key, octave}.
 
@@ -14,11 +15,12 @@ Definitions:
 Examples:
 
 + major_scale(:C) == [C: 0, D: 0, E: 0, F: 0, G: 0, A: 0, B: 0]
++ major_scale(:F) == [F: 0, G: 0, A: 0, Bb: 0, C: 1, D: 1, E: 1]
 + minor_scale(:A) == [A: 0, B: 0, C: 1, D: 1, E: 1, F: 1, G: 1]
 + blues_scale(:A) == [A: 0, C: 1, D: 1, D!: 1, E: 1, G: 1]
 + key(:major, 0, :sharps) == :C
 + key(:major, 3, :sharps) == :A
-+ key(:major, 3, :flats) == :D!  (obviously should be Eb)
++ key(:major, 3, :flats) == :Eb
 + next_fifth({:C, 1}) == {:G, 1}
 + next_fifth({:G, 1}) == {:D, 2}
 + chromatic_scale({:C, 0}) |> Enum.take(4) = [C: 0, C!: 0, D: 0, D!: 0]

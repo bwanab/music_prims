@@ -1,14 +1,20 @@
 defmodule MusicPrims do
   require Logger
 
-  @type note :: {atom, integer}
+  @type key :: atom
+  @type note :: {key, integer}
   @type note_sequence :: keyword(integer)
   @type scale :: note_sequence
   @type chord :: note_sequence
 
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
+  @flat_circle_of_fifths [:C, :G, :D, :A, :E, :B, :Gb, :Db, :Ab, :Eb, :Bb, :F]
+  @normal_flat [:G!, :D!, :A!, :F, :Gb, :Db, :Ab, :Eb, :Bb] |> MapSet.new
+  @flats [:Gb, :Db, :Ab, :Eb, :Bb] |> MapSet.new
 
-
+  @flat_key_map Enum.zip(@circle_of_fifths, @flat_circle_of_fifths) |> Enum.into(%{})
+  @normal_flat_key_map @flat_key_map |> Map.merge(%{:F! => :F!, :C! => :C!})
+  @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
   @circle_of_fourths [:C] ++ Enum.reverse(Enum.drop(@circle_of_fifths, 1))
 
@@ -19,7 +25,10 @@ defmodule MusicPrims do
   @modes [major: 0, dorian: 1, phrygian: 2, lydian: 3, mixolodian: 4, minor: 5,lociran: 6]
   @scale_intervals Enum.into(Enum.zip(@modes, @major_intervals), %{})
   @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
-  @midi_notes Enum.with_index(@notes) |> Enum.map(fn {a, b} -> {a, b+24} end)
+  @flat_notes [:C, :Db, :D, :Eb, :E, :F, :Gb, :G, :Ab, :A, :Bb, :B]
+  @sharp_midi_notes Enum.with_index(@notes) |> Enum.map(fn {a, b} -> {a, b+12} end)
+  @flat_midi_notes Enum.with_index(@flat_notes) |> Enum.map(fn {a, b} -> {a, b+12} end)
+  @midi_notes @sharp_midi_notes ++ @flat_midi_notes
 
   @notes_by_midi Enum.into(Enum.map(@midi_notes, fn {note, midi} -> {midi, note} end), %{})
   @midi_notes_map Enum.into(@midi_notes, %{})
@@ -47,16 +56,16 @@ defmodule MusicPrims do
 
   @spec key(:major | :minor, integer, :sharps | :flats) :: atom
   def key(mode, n_accidentals, which) when mode == :major and which == :sharps do
-    Enum.at(@circle_of_fifths, n_accidentals)
+    Enum.at(@circle_of_fifths, n_accidentals) |> map_by_sharp_key
   end
   def key(mode, n_accidentals, which) when mode == :major and which == :flats do
-    Enum.at(@circle_of_fourths, n_accidentals)
+    Enum.at(@circle_of_fourths, n_accidentals)  |> map_by_sharp_key
   end
   def key(mode, n_accidentals, which) when mode == :minor and which == :sharps do
-    Enum.at(@circle_of_fifths, n_accidentals+3)
+    Enum.at(@circle_of_fifths, n_accidentals+3)  |> map_by_sharp_key
   end
   def key(mode, n_accidentals, which) when mode == :minor and which == :flats do
-    Enum.at(@circle_of_fourths, n_accidentals+3)
+    Enum.at(@circle_of_fourths, n_accidentals+3)  |> map_by_sharp_key
   end
 
   @spec circle_of_5ths() :: [atom]
@@ -76,10 +85,11 @@ defmodule MusicPrims do
   """
   @spec next_nth({atom, integer}, [atom]) :: {atom, integer}
   def next_nth({key, octave}, circle) do
+    key = map_by_flat_key(key)
     index = Enum.find_index(circle, fn x -> x == key end) + 1
     new_key = Enum.at(circle, if index >= length(circle) do 0 else index end)
     octave_up = if gt(key, new_key) do 1 else 0 end
-    {new_key, octave + octave_up}
+    {map_by_sharp_key(new_key, :normal), octave + octave_up}
     end
 
   @spec next_fifth({atom, integer}) :: {atom, integer}
@@ -182,11 +192,42 @@ defmodule MusicPrims do
     end)
   end
 
+  @spec key_from_note(note | key) :: key
+  def key_from_note(n) when is_atom(n) do n end
+  def key_from_note({key, _o}) do
+    key
+  end
+
+  @spec map_by_key(note_sequence, key) :: note_sequence
+  def map_by_key(seq, key) do
+    if MapSet.member?(@normal_flat, key_from_note(key)) do
+      Enum.map(seq, fn a -> map_by_sharp_key(a) end)
+    else
+      seq
+    end
+  end
+
+  @spec map_by_sharp_key(note | key, atom) :: note | key
+  def map_by_sharp_key(nk, context \\ :normal) do
+    key_map = if context == :normal do @normal_flat_key_map else @flat_key_map end
+    k = Map.get(key_map, key_from_note(nk))
+    if is_tuple(nk) do {k, elem(nk, 1)} else k end
+   end
+
+  @spec map_by_flat_key(key) :: key
+  def map_by_flat_key(key) do
+    if MapSet.member?(@flats, key_from_note(key)) do
+      Map.get(@sharp_key_map, key)
+    else
+      key
+    end
+  end
+
   @spec adjust_octave(scale, integer) :: scale
   def adjust_octave(scale, octave) when octave == 0 do scale end
   def adjust_octave(scale, octave) do
     Enum.map(scale, fn {note, midi} -> {note, midi + 12 * octave} end)
-  end
+   end
 
   # def scale(key, mode \\ :major, octave \\ 0) do
   #   major_key(key, mode)
@@ -207,7 +248,8 @@ defmodule MusicPrims do
 
   @spec minor_scale(atom, integer) :: note_sequence
   def minor_scale(key, octave \\ 0) do
-    build_note_seq(key, @major_intervals |> rotate_zero(@modes[:minor]) , octave)
+    build_note_seq(key, @major_intervals
+    |> rotate_zero(@modes[:minor]) , octave)
   end
 
   @spec dorian_scale(atom, integer) :: note_sequence
@@ -225,10 +267,12 @@ defmodule MusicPrims do
     build_note_seq(key, @pent_intervals, octave)
   end
 
-  @spec build_note_seq(atom, [integer], integer) :: note_sequence
-  def build_note_seq(chrome_key, intervals, octave \\ 0) do
-    chromatic_scale({chrome_key, octave})
+  @spec build_note_seq(key, [integer], integer) :: note_sequence
+  def build_note_seq(key, intervals, octave \\ 0) do
+    skey = map_by_flat_key(key)
+    chromatic_scale({skey, octave})
     |> raw_scale(intervals)
+    |> map_by_key(skey)
   end
 
   @spec major_chord(atom, integer) :: note_sequence

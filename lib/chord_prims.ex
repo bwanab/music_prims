@@ -13,11 +13,16 @@ defmodule ChordPrims do
   @all_chord_sym_map @major_chord_sym_map ++ @minor_chord_sym_map ++ @dim_chord_sym_map |> Enum.into(%{})
   @chord_type_map %{:major => &major_chord/2, :minor => &minor_chord/2, :diminished => &diminished_chord/2 }
 
+  @spec chord_sym_to_chord(atom, atom) :: [atom]
+  def chord_sym_to_chord(sym, key) do
+    scale = major_scale(key) |> Enum.map(fn {n, _o} -> n end)
+    {index, scale_type} = @all_chord_sym_map[sym]
+    {Enum.at(scale, index), scale_type}
+  end
+
   @spec chord_syms_to_chords([atom], atom) :: [atom]
   def chord_syms_to_chords(sym_seq, key) do
-    scale = major_scale(key) |> Enum.map(fn {n, _o} -> n end)
-    Enum.map(sym_seq, fn s -> @all_chord_sym_map[s] end)
-    |> Enum.map(fn {index, scale_type} -> {Enum.at(scale, index), scale_type} end)
+    Enum.map(sym_seq, fn sym -> chord_sym_to_chord(sym, key) end)
   end
 
   @spec chord_to_notes(chord) :: MusicPrims.note_sequence
