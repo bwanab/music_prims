@@ -1,16 +1,17 @@
 defmodule MusicPrims do
   require Logger
 
-  @type key :: atom
+  @type key :: atom()
   @type note :: {key, integer}
   @type note_sequence :: keyword(integer)
   @type scale :: note_sequence
-  @type chord :: note_sequence
+  # @type chord :: note_sequence
 
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
+  #@circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :Ab, :Eb, :Bb, :F]
   @flat_circle_of_fifths [:C, :G, :D, :A, :E, :B, :Gb, :Db, :Ab, :Eb, :Bb, :F]
-  @normal_flat [:G!, :D!, :A!, :F, :Gb, :Db, :Ab, :Eb, :Bb] |> MapSet.new
-  @flats [:Gb, :Db, :Ab, :Eb, :Bb] |> MapSet.new
+  @normal_flat [:G!, :D!, :A!, :F, :Gb, :Db, :Ab, :Eb, :Bb]
+  @flats [:Gb, :Db, :Ab, :Eb, :Bb]
 
   @flat_key_map Enum.zip(@circle_of_fifths, @flat_circle_of_fifths) |> Enum.into(%{})
   @normal_flat_key_map @flat_key_map |> Map.merge(%{:F! => :F!, :C! => :C!})
@@ -59,13 +60,13 @@ defmodule MusicPrims do
     Enum.at(@circle_of_fifths, n_accidentals) |> map_by_sharp_key
   end
   def key(mode, n_accidentals, which) when mode == :major and which == :flats do
-    Enum.at(@circle_of_fourths, n_accidentals)  |> map_by_sharp_key
+    Enum.at(@circle_of_fourths, n_accidentals)  |> map_by_sharp_key(:flat)
   end
   def key(mode, n_accidentals, which) when mode == :minor and which == :sharps do
     Enum.at(@circle_of_fifths, n_accidentals+3)  |> map_by_sharp_key
   end
   def key(mode, n_accidentals, which) when mode == :minor and which == :flats do
-    Enum.at(@circle_of_fourths, n_accidentals+3)  |> map_by_sharp_key
+    Enum.at(@circle_of_fourths, n_accidentals+3)  |> map_by_sharp_key(:flat)
   end
 
   @spec circle_of_5ths() :: [atom]
@@ -139,15 +140,19 @@ defmodule MusicPrims do
     rotate_octave(scale, Enum.find_index(scale, fn {note, _} -> note == key end))
   end
 
-  @spec to_midi(note) :: integer
+  @spec to_midi(note | note_sequence | [note_sequence]) :: integer | [integer] | [[integer]]
   def to_midi({n, o}) do
     @midi_notes_map[n] + o * 12
   end
 
-  @spec to_midi(note_sequence) :: [integer]
+  def to_midi([notes] = note_seq) when is_list(notes) do
+    Enum.map(note_seq, fn n -> to_midi(n) end)
+  end
+
   def to_midi(notes) do
     Enum.map(notes, fn n -> to_midi(n) end)
   end
+
 
   @spec chromatic_scale(note) :: scale
   def chromatic_scale(note) do
@@ -198,29 +203,39 @@ defmodule MusicPrims do
     key
   end
 
+  @spec normal_flat() :: MapSet.t
+  def normal_flat do MapSet.new(@normal_flat) end
+
+  @spec flats() :: MapSet.t
+  def flats do MapSet.new(@flats) end
+
   @spec map_by_key(note_sequence, key) :: note_sequence
   def map_by_key(seq, key) do
-    if MapSet.member?(@normal_flat, key_from_note(key)) do
+    if MapSet.member?(normal_flat(), key_from_note(key)) do
       Enum.map(seq, fn a -> map_by_sharp_key(a) end)
     else
-      seq
+      Enum.map(seq, fn a -> map_by_flat_key(a) end)
     end
-  end
+   end
 
   @spec map_by_sharp_key(note | key, atom) :: note | key
   def map_by_sharp_key(nk, context \\ :normal) do
     key_map = if context == :normal do @normal_flat_key_map else @flat_key_map end
-    k = Map.get(key_map, key_from_note(nk))
+    k = case Map.get(key_map, key_from_note(nk)) do
+          nil -> key_from_note(nk)
+          val -> val
+        end
     if is_tuple(nk) do {k, elem(nk, 1)} else k end
    end
 
-  @spec map_by_flat_key(key) :: key
-  def map_by_flat_key(key) do
-    if MapSet.member?(@flats, key_from_note(key)) do
-      Map.get(@sharp_key_map, key)
+  @spec map_by_flat_key(note | key) :: note | key
+  def map_by_flat_key(nk) do
+    if MapSet.member?(flats(), key_from_note(nk)) do
+      new_key = Map.get(@sharp_key_map, key_from_note(nk))
+      if is_tuple(nk) do {new_key, elem(nk, 1)} else new_key end
     else
-      key
-    end
+      nk
+     end
   end
 
   @spec adjust_octave(scale, integer) :: scale
@@ -272,7 +287,7 @@ defmodule MusicPrims do
     skey = map_by_flat_key(key)
     chromatic_scale({skey, octave})
     |> raw_scale(intervals)
-    |> map_by_key(skey)
+    |> map_by_key(key)
   end
 
   @spec major_chord(atom, integer) :: note_sequence

@@ -120,20 +120,25 @@ import ChordPrims
 ```
 
 ```elixir
-chord_syms_to_chords([:I, :IV, :vi, :V], :G)
+chord_syms_to_chords([:I, :IV, :vi, :V], {{:G, 0}, :major})
 ```
 
 ```elixir
-Enum.map(chord_syms_to_chords([:I, :IV, :vi, :V], :G), &chord_to_notes(&1))
+Enum.map(chord_syms_to_chords([:I, :IV, :vi, :V], {{:G, 0}, :major}), &chord_to_notes(&1))
 ```
 
 ```elixir
 Enum.map(
-  chord_syms_to_chords([:I, :IV, :vi, :V], :G),
+  chord_syms_to_chords([:I, :IV, :vi, :V], {{:G, 0}, :major}),
   &(chord_to_notes(&1)
     |> to_midi
     |> Enum.map(fn a -> to_string(a) end))
 )
 ```
 
+You never give me your money
 
+```elixir
+yngmym = [:i7, :iv7, :VII7, :III, :VImaj7, :ii7, :V7, :i]
+chord_syms_to_chords(yngmym, {{:A, 2}, :minor})
+```

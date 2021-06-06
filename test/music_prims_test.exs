@@ -32,7 +32,7 @@ defmodule MusicPrimsTest do
         |> Enum.map(fn {a,_} -> a end)
     end
     test "chromatic scale" do
-      assert chromatic_scale({:C, 0}) |> Enum.take(4) == [C: 0, C!: 0, D: 0, D!: 0]
+      assert chromatic_scale({:C, 0}) |> Enum.take(4) == [C: 0, C!: 0, D: 0, Eb: 0]
     end
     test "first 5 notes of :C :major same as last 5 notes of :A :minor" do
       assert major_scale(:C, 1) |> Enum.take(5) ==
@@ -74,15 +74,15 @@ defmodule MusicPrimsTest do
     end
 
     test "chord sequence reification" do
-      assert chord_syms_to_chords([:I, :IV, :vi, :V], :C) == [{:C, :major}, {:F, :major}, {:A, :minor}, {:G, :major}]
+      assert chord_syms_to_chords([:I, :IV, :vi, :V], {{:C, 0}, :major}) == [{{:C, 0}, :major}, {{:F, 0}, :major}, {{:A, 0}, :minor}, {{:G, 0}, :major}]
     end
 
     test "chord sequence reification and to midi" do
-      assert Enum.map(chord_syms_to_chords([:I, :IV, :vi, :V], :G), &(chord_to_notes(&1))
+      assert Enum.map(chord_syms_to_chords([:I, :IV, :vi, :V], {{:G, 0}, :major}), &(chord_to_notes(&1))
       |> to_midi
       |> Enum.map(fn a -> to_string(a) end)) ==
         [
-          ["31", "35", "38"],
+          ["19", "23", "26"],
           ["24", "28", "31"],
           ["28", "31", "35"],
           ["26", "30", "33"]
