@@ -8,7 +8,6 @@ defmodule MusicPrims do
   # @type chord :: note_sequence
 
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
-  #@circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :Ab, :Eb, :Bb, :F]
   @flat_circle_of_fifths [:C, :G, :D, :A, :E, :B, :Gb, :Db, :Ab, :Eb, :Bb, :F]
   @normal_flat [:G!, :D!, :A!, :F, :Gb, :Db, :Ab, :Eb, :Bb]
   @flats [:Gb, :Db, :Ab, :Eb, :Bb]

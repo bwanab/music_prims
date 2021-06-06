@@ -57,4 +57,15 @@ defmodule ChordPrims do
     Enum.map(chords, &(chord_to_notes(&1)))
   end
 
+  @spec chord_sym_to_midi(atom, chord) :: [integer]
+  def chord_sym_to_midi(sym, chord) do
+    chord_sym_to_chord(sym, chord)
+    |> chord_to_notes
+    |> to_midi
+  end
+
+  @spec chord_syms_to_midi([atom], chord) :: [[integer]]
+  def chord_syms_to_midi(sym_seq, chord) do
+    Enum.map(sym_seq, &(chord_sym_to_midi(&1, chord)))
+  end
 end
