@@ -147,3 +147,65 @@ chord_syms_to_chords(yngmym, {{:A, 2}, :minor})
 ```elixir
 chord_syms_to_midi(yngmym, {{:A, 0}, :minor})
 ```
+
+Now for something kind of fun. We define the major diatonic progression as:
+
+```elixir
+major_diatonic_progression()
+```
+
+and the minor diatonic progression as:
+
+```elixir
+minor_diatonic_progression()
+```
+
+The diatonic progressions are basically chord scales.
+
+Using the table of usual progressions which we've gotten from Walter Piston's book Harmony ([https://www.amazon.com/Harmony-Walter-Piston/dp/B0041OKJDO](https://www.amazon.com/Harmony-Walter-Piston/dp/B0041OKJDO))
+
+```elixir
+table_of_usual_progressions()
+```
+
+where the keys are the current chord and the values are a list of chords that flow from that chord in normal order.
+We've defined the likelyhood of hitting one or the order with the following list of odds:
+
+```elixir
+usual_odds()
+```
+
+Why have we chosen to represent the usual progressions as numbers instead of symbols? Because it works for any progression of chords scales of which we've
+so far defined two: major diatonic and minor diatonic.
+
+The sum total of the odds is:
+
+```elixir
+usual_odds() |> Enum.sum()
+```
+
+Thus, if your root chord is 1, the odds of the next chord being 4 are 10/26 where the odds of it being 3 are just 1/26.
+
+Using these progressions and odds we can define a random chord pattern generator:
+
+```elixir
+# jere we are going to get a 4 chord progression starting at root chord 1
+random_progression(4, 1)
+```
+
+Taking that a step further, let's define a progression of random length that ends when it comes back to the root which
+we will convert to an actual set of chord symbols based on a given chord scale. This will give different results 
+each time it is evaluated.
+
+```elixir
+random_progression_to_root(1, major_diatonic_progression())
+```
+
+Let's reify that to an actual chord progression:
+
+```elixir
+random_progression_to_root(1, major_diatonic_progression())
+|> chord_syms_to_chords({{:G, 0}, :major})
+```
+
+It's an automatic song writer - well, chords at least, you'll still have to write the lyrics :)

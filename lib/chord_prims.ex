@@ -1,4 +1,5 @@
 defmodule ChordPrims do
+  require Logger
   import MusicPrims
 
   @type chord :: {MusicPrims.note, atom}
@@ -30,6 +31,46 @@ defmodule ChordPrims do
                     :minor_seventh => &minor_seventh_chord/2
   }
 
+  def major_diatonic_progression() do [:I, :ii, :iii, :IV, :V, :vi, :vii0] end
+  def minor_diatonic_progression() do [:i, :ii0, :III, :iv, :v, :VI, :VII] end
+
+  def table_of_usual_progressions() do
+
+    %{
+      1 => [4, 5, 6, 2, 3],
+      2 => [5, 4, 6, 1, 3],
+      3 => [6, 4, 1, 2, 5],
+      4 => [5, 1, 2, 3, 6],
+      5 => [1, 4, 6, 2, 3],
+      6 => [2, 5, 3, 4, 1],
+      7 => [1, 3, 6, 2, 4]
+    }
+  end
+
+  @usual_odds [10, 8, 4, 3, 1]
+  @usual_odds_sums Enum.reduce(@usual_odds, [0], fn x, [f|r] -> [x + f] ++ [f | r] end) |> Enum.reverse() |> Enum.drop(1)
+
+  def usual_odds() do @usual_odds end
+
+  def random_progression(len, start) do
+    Stream.iterate(start, &(random_next(&1))) |> Enum.take(len)
+  end
+
+  def random_progression_to_root(start, progression) do
+    v =
+      Stream.iterate(start, &(random_next(&1)))
+      |> Enum.take(30)
+      |> Enum.drop(1)
+      |> Enum.take_while(&(&1 != start))
+    Enum.map([start|v], &(Enum.at(progression, &1 - 1)))
+  end
+
+  def random_next(start) do
+    rnd = :rand.uniform(Enum.sum(@usual_odds))
+    index = Enum.find_index(@usual_odds_sums, fn x -> x >= rnd end)
+    table_of_usual_progressions()[start] |> Enum.at(index)
+   end
+
   @spec chord_sym_to_chord(atom, chord) :: chord
   def chord_sym_to_chord(sym, {{key, octave}, scale_type}) do
     scale = if scale_type == :major do
@@ -40,7 +81,7 @@ defmodule ChordPrims do
     scale |> Enum.map(fn {n, _o} -> n end)
     {index, scale_type} = @all_chord_sym_map[sym]
     {Enum.at(scale, index), scale_type}
-  end
+     end
 
   @spec chord_syms_to_chords([atom], chord) :: [chord]
   def chord_syms_to_chords(sym_seq, chord) do
