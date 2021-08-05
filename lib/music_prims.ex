@@ -123,6 +123,11 @@ defmodule MusicPrims do
     Enum.drop(notes, by) ++ (Enum.take(notes, by) |> Enum.map(fn {n, o} -> {n, o + 1} end))
   end
 
+  @spec rotate_any([any], integer) :: [any]
+  def rotate_any(l, by) do
+    Enum.drop(l, by) ++ Enum.take(l, by)
+  end
+
   @spec rotate_octave(note_sequence, integer) :: note_sequence
   def rotate_octave([f|rest], by) when is_tuple(f) do
     scale = [f|rest]

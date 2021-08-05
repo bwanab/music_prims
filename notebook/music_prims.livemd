@@ -186,7 +186,7 @@ usual_odds() |> Enum.sum()
 
 Thus, if your root chord is 1, the odds of the next chord being 4 are 10/26 where the odds of it being 3 are just 1/26.
 
-Using these progressions and odds we can define a random chord pattern generator:
+Using these progressions and odds we can define a random, but well formed, chord pattern generator:
 
 ```elixir
 # jere we are going to get a 4 chord progression starting at root chord 1
@@ -198,14 +198,29 @@ we will convert to an actual set of chord symbols based on a given chord scale. 
 each time it is evaluated.
 
 ```elixir
-random_progression_to_root(1, major_diatonic_progression())
+chord_progression = random_progression_to_root(1, major_diatonic_progression())
 ```
 
 Let's reify that to an actual chord progression:
 
 ```elixir
-random_progression_to_root(1, major_diatonic_progression())
-|> chord_syms_to_chords({{:G, 0}, :major})
+chord_progression |> chord_syms_to_chords({{:G, 0}, :major})
 ```
 
 It's an automatic song writer - well, chords at least, you'll still have to write the lyrics :)
+
+I've played a bunch of these patterns on my guitar and they generally sound pretty good. Play around with strum
+and durations. Truthfully, several of them reminded me of Radiohead songs - I'd heard that Jonny Greenwood was 
+into programming so maybe this is how they do it :)
+
+Looking at these progressions makes me wonder about the distribution of the length. In other words, each progression
+is built by walking a directed, but random walk to the root chord. How many chords do we get?
+
+```elixir
+f = &random_progression_to_root/0
+freqs = Stream.repeatedly(f) |> Enum.take(100_000) |> Enum.map(&length(&1)) |> Enum.frequencies()
+freqs |> Map.keys() |> Enum.sort() |> Enum.map(&{&1, freqs[&1] / 1000})
+```
+
+So, 26 percent of the progressions have two chords, 17 percent have three and so on. This strikes me as a reasonable 
+estimate of the songs in popular music. at least in the Anglo-Saxon world, if not beyond that.

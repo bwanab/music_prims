@@ -47,27 +47,33 @@ defmodule ChordPrims do
     }
   end
 
-  @usual_odds [10, 8, 4, 3, 1]
-  @usual_odds_sums Enum.reduce(@usual_odds, [0], fn x, [f|r] -> [x + f] ++ [f | r] end) |> Enum.reverse() |> Enum.drop(1)
+  # results in a list of indices where each index is repeated n times. So, there will be 10 * 0, 8 * 1, 4 * 2, etc.
+  @usual_odds Enum.with_index([10, 8, 4, 3, 1]) |> Enum.reduce([], fn {x, i}, acc -> acc ++ (Stream.repeatedly(fn () -> i end) |> Enum.take(x)) end)
 
+  @spec usual_odds() :: [integer]
   def usual_odds() do @usual_odds end
 
-  def random_progression(len, start) do
-    Stream.iterate(start, &(random_next(&1))) |> Enum.take(len)
+
+  @spec random_progression(integer, integer, [atom]) :: [atom]
+  def random_progression(len, start, progression \\ major_diatonic_progression()) do
+    Stream.iterate(start, &(random_next(&1)))
+    |> Enum.take(len)
+    |> Enum.map(&(Enum.at(progression, &1 - 1)))
   end
 
-  def random_progression_to_root(start, progression) do
-    v =
-      Stream.iterate(start, &(random_next(&1)))
-      |> Enum.take(30)
-      |> Enum.drop(1)
-      |> Enum.take_while(&(&1 != start))
-    Enum.map([start|v], &(Enum.at(progression, &1 - 1)))
+  @spec random_progression_to_root(integer, [atom]) :: [atom]
+  def random_progression_to_root(start \\ 1, progression \\ major_diatonic_progression()) do
+    Stream.iterate(start, &(random_next(&1)))
+    |> Enum.take(50) # arbitrarily long value such that the root chord should repeat.
+    |> Enum.drop(1)  # since the first one is the start
+    |> Enum.take_while(&(&1 != start)) # take up until the start is found in the progression
+    |> List.insert_at(0, start)  # add the start back into the beginning.
+    |> Enum.map(&(Enum.at(progression, &1 - 1)))
   end
 
+  @spec random_next(integer) :: integer
   def random_next(start) do
-    rnd = :rand.uniform(Enum.sum(@usual_odds))
-    index = Enum.find_index(@usual_odds_sums, fn x -> x >= rnd end)
+    index = Enum.random(@usual_odds)
     table_of_usual_progressions()[start] |> Enum.at(index)
    end
 
@@ -108,5 +114,75 @@ defmodule ChordPrims do
   @spec chord_syms_to_midi([atom], chord) :: [[integer]]
   def chord_syms_to_midi(sym_seq, chord) do
     Enum.map(sym_seq, &(chord_sym_to_midi(&1, chord)))
+  end
+
+  @spec chord_common_notes(chord, chord, boolean) :: integer
+  def chord_common_notes(c1, c2, ignore_octave \\ :true) do
+    common_notes(chord_to_notes(c1), chord_to_notes(c2), ignore_octave)
+  end
+
+  @spec common_notes(MusicPrims.note_sequence, MusicPrims.note_sequence, boolean) :: integer
+  def common_notes(c1, c2, ignore_octave \\ :true)
+
+  def common_notes(c1, c2, ignore_octave) when ignore_octave == :false do
+    case List.myers_difference(c1, c2)[:eq] do
+      nil -> []
+      val -> val
+    end
+    |> Enum.count
+  end
+
+  def common_notes(c1, c2, ignore_octave) when ignore_octave == :true do
+    case List.myers_difference(Enum.map(c1, &key_from_note(&1)), Enum.map(c2, &key_from_note(&1)))[:eq] do
+      nil -> []
+      val -> val
+    end
+    |> Enum.count
+  end
+
+
+  @spec note_distance(MusicPrims.note, MusicPrims.note) :: integer
+  def note_distance(n1, n2) do
+    v =
+      Stream.iterate(abs(to_midi(n1) - to_midi(n2)), &(&1 - 12))
+      |> Stream.drop_while(&(&1 > 12))
+      |> Enum.take(1)
+      |> List.first
+    if v > 6 do 12 - v else v end
+  end
+
+  @spec compute_one_flow(MusicPrims.note_sequence, MusicPrims.note_sequence) :: integer
+  def compute_one_flow(c1, c2) do
+    Enum.zip(c1, c2)
+    # |> IO.inspect
+    |> Enum.map(fn {n1, n2} ->
+      note_distance(n1, n2)
+    end)
+    # |> IO.inspect
+    |> Enum.sum
+  end
+
+  def compute_flow(c1, c2) when is_list(c1) and is_list(c2) do
+    n = length(c2) - 1
+    Enum.map(0..n, &(rotate_any(c2, &1)))
+    # |> IO.inspect
+    |> Enum.map(fn c2p -> compute_one_flow(c1, c2p) end)
+    # |> IO.inspect
+    |> Enum.min
+  end
+
+  def compute_flow(c1, c2) do
+    compute_flow(chord_to_notes(c1), chord_to_notes(c2))
+  end
+
+  def compute_flow(p) do
+    sum = Enum.zip(p, rotate_any(p, 1))
+    |> Enum.map(fn {a, b} ->
+      compute_flow(
+        chord_sym_to_chord(a, {{:G, 0}, :major}),
+        chord_sym_to_chord(b, {{:G, 0}, :major}))
+    end)
+    |> Enum.sum
+    sum / length(p)
   end
 end
