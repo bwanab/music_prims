@@ -69,7 +69,7 @@ defmodule MusicPrims do
   end
 
   @spec circle_of_5ths() :: [atom]
-  def circle_of_5ths() do @circle_of_fifths end
+  def circle_of_5ths() do @flat_circle_of_fifths end
 
   @spec circle_of_4ths() :: [atom]
   def circle_of_4ths() do @circle_of_fourths end
