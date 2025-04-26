@@ -82,6 +82,27 @@ defmodule MusicPrimsTest do
       assert major_seventh_chord(:F) |> to_midi == [17, 21, 24, 28]
       assert major_seventh_chord(:F) |> third_inversion |> to_midi == [28, 29, 33, 36]
     end
+    
+    test "octave_up on all notes" do
+      assert normalize(major_chord(:C) |> octave_up) == [C: 1, E: 1, G: 1]
+      assert normalize(major_chord(:F) |> octave_up) == [F: 1, A: 1, C: 2]
+      assert normalize(minor_chord(:A) |> octave_up) == [A: 1, C: 2, E: 2]
+    end
+    
+    test "bump_octave up on all notes" do
+      assert normalize(major_chord(:C) |> bump_octave(:up)) == [C: 1, E: 1, G: 1]
+      assert normalize(major_chord(:F) |> bump_octave(:up)) == [F: 1, A: 1, C: 2]
+    end
+    
+    test "bump_octave down on all notes" do
+      assert normalize(major_chord(:C, 1) |> bump_octave(:down)) == [C: 0, E: 0, G: 0]
+      assert normalize(major_chord(:F, 1) |> bump_octave(:down)) == [F: 0, A: 0, C: 1]
+    end
+    
+    test "bump_octave on single position" do
+      assert normalize(major_chord(:C) |> bump_octave(1, :up)) == [C: 0, E: 1, G: 0]
+      assert normalize(major_chord(:F, 1) |> bump_octave(2, :down)) == [F: 1, A: 1, C: 1]
+    end
 
     test "chord sequence reification" do
       result = chord_syms_to_chords([:I, :IV, :vi, :V], {{:C, 0}, :major})

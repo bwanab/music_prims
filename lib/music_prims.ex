@@ -410,23 +410,48 @@ defmodule MusicPrims do
     build_note_seq(key, @augmented_seventh, octave)
   end
 
-  @spec octave_up(note | raw_note) :: note | raw_note
-  def octave_up(%Note{note: {note, octave}} = n) do
-    %{n | note: {note, octave + 1}}
+  @doc """
+  Adjust a note's octave up or down by one.
+  """
+  @spec bump_octave(note | raw_note, :up | :down) :: note | raw_note
+  def bump_octave(%Note{note: {note, octave}} = n, direction) do
+    delta = if direction == :up, do: 1, else: -1
+    %{n | note: {note, octave + delta}}
   end
   
-  def octave_up({note, octave}) do
-    {note, octave + 1}
+  def bump_octave({note, octave}, direction) do
+    delta = if direction == :up, do: 1, else: -1
+    {note, octave + delta}
   end
 
-  @spec octave_up(note_sequence, integer) :: note_sequence
-  def octave_up(chord = [%Note{} | _], pos) do
-    List.replace_at(chord, pos, Enum.at(chord, pos) |> octave_up)
+  @spec bump_octave(note_sequence, :up | :down) :: note_sequence
+  def bump_octave(chord = [%Note{} | _], direction) do
+    Enum.map(chord, &bump_octave(&1, direction))
   end
   
-  def octave_up(chord, pos) do
-    List.replace_at(chord, pos, Enum.at(chord, pos) |> octave_up)
+  def bump_octave(chord, direction) when is_list(chord) do
+    Enum.map(chord, &bump_octave(&1, direction))
   end
+  
+  @spec bump_octave(note_sequence, integer, :up | :down) :: note_sequence
+  def bump_octave(chord = [%Note{} | _], pos, direction) do
+    List.replace_at(chord, pos, Enum.at(chord, pos) |> bump_octave(direction))
+  end
+  
+  def bump_octave(chord, pos, direction) when is_list(chord) and is_integer(pos) do
+    List.replace_at(chord, pos, Enum.at(chord, pos) |> bump_octave(direction))
+  end
+  
+  # Maintain backward compatibility with existing code
+  @spec octave_up(note | raw_note) :: note | raw_note
+  def octave_up(%Note{} = note), do: bump_octave(note, :up)
+  def octave_up({_note, _octave} = note), do: bump_octave(note, :up)
+  
+  @spec octave_up(note_sequence) :: note_sequence
+  def octave_up(chord) when is_list(chord), do: bump_octave(chord, :up)
+  
+  @spec octave_up(note_sequence, integer) :: note_sequence
+  def octave_up(chord, pos) when is_integer(pos), do: bump_octave(chord, pos, :up)
 
   @spec first_inversion(note_sequence) :: note_sequence
   def first_inversion(chord) do
