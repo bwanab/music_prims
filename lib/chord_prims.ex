@@ -84,10 +84,19 @@ defmodule ChordPrims do
     else
       minor_scale(key, octave)
     end
-    scale |> Enum.map(fn {n, _o} -> n end)
-    {index, scale_type} = @all_chord_sym_map[sym]
-    {Enum.at(scale, index), scale_type}
-     end
+    
+    # Extract just the note names from the scale
+    note_names = scale |> Enum.map(fn 
+      %Note{note: {n, _o}} -> n
+      {n, _o} -> n 
+    end)
+    
+    {index, chord_type} = @all_chord_sym_map[sym]
+    chord_key = Enum.at(note_names, index)
+    
+    # Keep the same format as input - full tuple with octave
+    {{chord_key, octave}, chord_type}
+  end
 
   @spec chord_syms_to_chords([atom], chord) :: [chord]
   def chord_syms_to_chords(sym_seq, chord) do
@@ -97,6 +106,11 @@ defmodule ChordPrims do
   @spec chord_to_notes(chord) :: MusicPrims.note_sequence
   def chord_to_notes({{key, octave}, scale_type}) do
     @chord_type_map[scale_type].(key, octave)
+  end
+  
+  def chord_to_notes({key, scale_type}) when is_atom(key) and is_atom(scale_type) do
+    # Default to octave 0 if only key is given
+    @chord_type_map[scale_type].(key, 0)
   end
 
   @spec chords_to_notes([chord]) :: [MusicPrims.note_sequence]

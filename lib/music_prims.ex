@@ -2,8 +2,9 @@ defmodule MusicPrims do
   require Logger
 
   @type key :: atom()
-  @type note :: {key, integer}
-  @type note_sequence :: keyword(integer)
+  @type raw_note :: {key, integer}  # Keep the old type for backward compatibility
+  @type note :: Note.t()  # Use the Note struct for the new implementation
+  @type note_sequence :: [note]
   @type scale :: note_sequence
   # @type chord :: note_sequence
 
@@ -83,26 +84,43 @@ defmodule MusicPrims do
   @doc """
   Kind of arbitrary that the octave cutoff is always at C.
   """
-  @spec next_nth({atom, integer}, [atom]) :: {atom, integer}
+  @spec next_nth(note | raw_note, [atom]) :: note
+  def next_nth(%Note{note: {key, octave}} = note, circle) do
+    result = next_nth({key, octave}, circle)
+    %{note | note: result}
+  end
+  
   def next_nth({key, octave}, circle) do
     key = map_by_flat_key(key)
     index = Enum.find_index(circle, fn x -> x == key end) + 1
     new_key = Enum.at(circle, if index >= length(circle) do 0 else index end)
     octave_up = if gt(key, new_key) do 1 else 0 end
     {map_by_sharp_key(new_key, :normal), octave + octave_up}
-    end
+  end
 
-  @spec next_fifth({atom, integer}) :: {atom, integer}
+  @spec next_fifth(note | raw_note) :: note | raw_note
+  def next_fifth(%Note{} = note) do
+    next_nth(note, @circle_of_fifths)
+  end
+  
   def next_fifth({key, octave}) do
     next_nth({key, octave}, @circle_of_fifths)
   end
 
-  @spec next_fourth({atom, integer}) :: {atom, integer}
+  @spec next_fourth(note | raw_note) :: note | raw_note
+  def next_fourth(%Note{} = note) do
+    next_nth(note, @circle_of_fourths)
+  end
+  
   def next_fourth({key, octave}) do
     next_nth({key, octave}, @circle_of_fourths)
   end
 
-  @spec next_half_step({atom, integer}) :: {atom, integer}
+  @spec next_half_step(note | raw_note) :: note | raw_note
+  def next_half_step(%Note{} = note) do
+    next_nth(note, @notes)
+  end
+  
   def next_half_step({key, octave}) do
     next_nth({key, octave}, @notes)
   end
@@ -118,7 +136,13 @@ defmodule MusicPrims do
     [0|Enum.map(r, &(&1 - f))]
   end
 
-  @spec rotate_notes([note], integer) :: [note]
+  @spec rotate_notes([note] | [raw_note], integer) :: [note] | [raw_note]
+  def rotate_notes(notes = [%Note{} | _], by) do
+    Enum.drop(notes, by) ++ (Enum.take(notes, by) |> Enum.map(
+      fn %Note{note: {n, o}} = note -> %{note | note: {n, o + 1}} end)
+    )
+  end
+  
   def rotate_notes(notes, by) do
     Enum.drop(notes, by) ++ (Enum.take(notes, by) |> Enum.map(fn {n, o} -> {n, o + 1} end))
   end
@@ -144,7 +168,11 @@ defmodule MusicPrims do
     rotate_octave(scale, Enum.find_index(scale, fn {note, _} -> note == key end))
   end
 
-  @spec to_midi(note | note_sequence | [note_sequence]) :: integer | [integer] | [[integer]]
+  @spec to_midi(note | raw_note | note_sequence | [note_sequence]) :: integer | [integer] | [[integer]]
+  def to_midi(%Note{note: {n, o}, velocity: _velocity}) do
+    @midi_notes_map[n] + o * 12
+  end
+  
   def to_midi({n, o}) do
     @midi_notes_map[n] + o * 12
   end
@@ -158,7 +186,12 @@ defmodule MusicPrims do
   end
 
 
-  @spec chromatic_scale(note) :: scale
+  @spec chromatic_scale(note | raw_note) :: [raw_note]
+  def chromatic_scale(%Note{note: raw_note}) do
+    # For now, keep returning raw notes to maintain backward compatibility
+    chromatic_scale(raw_note)
+  end
+  
   def chromatic_scale(note) do
     Stream.iterate(note, fn a -> next_half_step(a) end) |> Enum.take(12)
   end
@@ -201,8 +234,11 @@ defmodule MusicPrims do
     end)
   end
 
-  @spec key_from_note(note | key) :: key
+  @spec key_from_note(note | raw_note | key) :: key
   def key_from_note(n) when is_atom(n) do n end
+  def key_from_note(%Note{note: {key, _o}}) do
+    key
+  end
   def key_from_note({key, _o}) do
     key
   end
@@ -222,31 +258,46 @@ defmodule MusicPrims do
     end
    end
 
-  @spec map_by_sharp_key(note | key, atom) :: note | key
-  def map_by_sharp_key(nk, context \\ :normal) do
+  @spec map_by_sharp_key(note | raw_note | key, atom) :: note | raw_note | key
+  def map_by_sharp_key(value, context \\ :normal)
+  
+  def map_by_sharp_key(%Note{note: {key, octave}} = note, context) do
+    mapped_key = map_by_sharp_key(key, context)
+    %{note | note: {mapped_key, octave}}
+  end
+  
+  def map_by_sharp_key(nk, context) do
     key_map = if context == :normal do @normal_flat_key_map else @flat_key_map end
     k = case Map.get(key_map, key_from_note(nk)) do
           nil -> key_from_note(nk)
           val -> val
         end
     if is_tuple(nk) do {k, elem(nk, 1)} else k end
-   end
+  end
 
-  @spec map_by_flat_key(note | key) :: note | key
+  @spec map_by_flat_key(note | raw_note | key) :: note | raw_note | key
+  def map_by_flat_key(%Note{note: {key, octave}} = note) do
+    mapped_key = map_by_flat_key(key)
+    %{note | note: {mapped_key, octave}}
+  end
+  
   def map_by_flat_key(nk) do
     if MapSet.member?(flats(), key_from_note(nk)) do
       new_key = Map.get(@sharp_key_map, key_from_note(nk))
       if is_tuple(nk) do {new_key, elem(nk, 1)} else new_key end
     else
       nk
-     end
+    end
   end
 
   @spec adjust_octave(scale, integer) :: scale
   def adjust_octave(scale, octave) when octave == 0 do scale end
+  def adjust_octave(scale = [%Note{} | _], octave) do
+    Enum.map(scale, fn %Note{note: {note, o}} = n -> %{n | note: {note, o + octave}} end)
+  end
   def adjust_octave(scale, octave) do
-    Enum.map(scale, fn {note, midi} -> {note, midi + 12 * octave} end)
-   end
+    Enum.map(scale, fn {note, o} -> {note, o + octave} end)
+  end
 
   # def scale(key, mode \\ :major, octave \\ 0) do
   #   major_key(key, mode)
@@ -289,9 +340,14 @@ defmodule MusicPrims do
   @spec build_note_seq(key, [integer], integer) :: note_sequence
   def build_note_seq(key, intervals, octave \\ 0) do
     skey = map_by_flat_key(key)
-    chromatic_scale({skey, octave})
+    raw_seq = chromatic_scale({skey, octave})
     |> raw_scale(intervals)
     |> map_by_key(key)
+    
+    # Convert to Note structs with quarter note durations (1) and velocity of 100
+    Enum.map(raw_seq, fn raw_note -> 
+      Note.new(raw_note, duration: 1, velocity: 100)
+    end)
   end
 
   @spec major_chord(atom, integer) :: note_sequence
@@ -354,12 +410,20 @@ defmodule MusicPrims do
     build_note_seq(key, @augmented_seventh, octave)
   end
 
-  @spec octave_up(note) :: note
+  @spec octave_up(note | raw_note) :: note | raw_note
+  def octave_up(%Note{note: {note, octave}} = n) do
+    %{n | note: {note, octave + 1}}
+  end
+  
   def octave_up({note, octave}) do
     {note, octave + 1}
   end
 
   @spec octave_up(note_sequence, integer) :: note_sequence
+  def octave_up(chord = [%Note{} | _], pos) do
+    List.replace_at(chord, pos, Enum.at(chord, pos) |> octave_up)
+  end
+  
   def octave_up(chord, pos) do
     List.replace_at(chord, pos, Enum.at(chord, pos) |> octave_up)
   end
@@ -415,12 +479,51 @@ defmodule MusicPrims do
     Enum.map(scale_notes(scale), fn {_note, midi} -> midi end)
   end
 
+  @doc """
+  Converts a raw note tuple to a Note struct
+  """
+  @spec to_note(raw_note) :: note
+  def to_note({key, octave}) do
+    Note.new({key, octave})
+  end
+  
+  @doc """
+  Converts a Note struct to a raw note tuple
+  """
+  @spec to_raw_note(note) :: raw_note
+  def to_raw_note(%Note{note: note}), do: note
+  
+  @doc """
+  Converts a list of Note structs to a keyword list in the old format
+  For backward compatibility with tests
+  """
+  @spec to_keyword_list([note]) :: keyword(integer)
+  def to_keyword_list(notes) do
+    Enum.map(notes, fn %Note{note: {key, octave}} -> {key, octave} end)
+  end
+  
+  @doc """
+  Creates a Note struct from a key and octave
+  """
+  @spec make_note(key, integer, keyword()) :: note
+  def make_note(key, octave, opts \\ []) do
+    Note.new({key, octave}, opts)
+  end
+  
   def is_note({n, o}) do
+    Enum.any?(circle_of_5ths(), &(&1 == n)) and is_integer(o)
+  end
+  
+  def is_note(%Note{note: {n, o}}) do
     Enum.any?(circle_of_5ths(), &(&1 == n)) and is_integer(o)
   end
 
   def note_to_string({n, _o}) do
     inspect(n) |> String.replace("!", "#") |> String.replace(":", "")
+  end
+  
+  def note_to_string(%Note{} = note) do
+    Note.to_string(note)
   end
 
 
