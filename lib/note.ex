@@ -3,6 +3,11 @@ defmodule Note do
   @type note :: {key, integer}
   @type note_sequence :: keyword(Note)
   @type scale :: note_sequence
+  @type t :: %__MODULE__{
+    note: note(),
+    duration: float(),
+    velocity: integer()
+  }
 
   defstruct [:note, :duration, :velocity]
 
