@@ -48,32 +48,32 @@ defmodule NoteTest do
       note = Note.new({:Bb, 3})
       assert Note.to_string(note) == "Bb3"
     end
-    
+
     test "formats a quarter note (duration 1)" do
       note = Note.new({:C, 4}, duration: 1)
       assert Note.to_string(note) == "C4*1/4"
     end
-    
+
     test "formats a half note (duration 2)" do
       note = Note.new({:D, 3}, duration: 2)
       assert Note.to_string(note) == "D3*2/4"
     end
-    
+
     test "formats an eighth note (duration 0.5)" do
       note = Note.new({:G, 3}, duration: 0.5)
       assert Note.to_string(note) == "G3*1/8"
     end
-    
+
     test "formats a sixteenth note (duration 0.25)" do
       note = Note.new({:A, 5}, duration: 0.25)
       assert Note.to_string(note) == "A5*1/16"
     end
-    
+
     test "formats a whole note (duration 4)" do
       note = Note.new({:E, 2}, duration: 4)
       assert Note.to_string(note) == "E2*4/4"
     end
-    
+
     test "formats a custom duration" do
       note = Note.new({:F, 4}, duration: 3)
       assert Note.to_string(note) == "F4*3/4"
@@ -83,75 +83,75 @@ defmodule NoteTest do
   describe "Note.midi_to_note/3" do
     test "converts middle C (MIDI 60) to Note struct" do
       note = Note.midi_to_note(60, 1, 100)
-      assert note.note == {:c, 4}
+      assert note.note == {:C, 4}
       assert note.duration == 1
       assert note.velocity == 100
     end
-    
+
     test "converts MIDI note 72 to C5" do
       note = Note.midi_to_note(72, 2, 80)
-      assert note.note == {:c, 5}
+      assert note.note == {:C, 5}
       assert note.duration == 2
       assert note.velocity == 80
     end
-    
+
     test "converts MIDI note 61 to C#4" do
       note = Note.midi_to_note(61, 0.5, 90)
-      assert note.note == {:c!, 4}
+      assert note.note == {:C!, 4}
       assert note.duration == 0.5
       assert note.velocity == 90
     end
-    
+
     test "converts MIDI note 21 to A0 (lowest piano note)" do
       note = Note.midi_to_note(21, 1, 100)
-      assert note.note == {:a, 0}
+      assert note.note == {:A, 0}
       assert note.duration == 1
       assert note.velocity == 100
     end
-    
+
     test "converts MIDI note 108 to C8 (high piano note)" do
       note = Note.midi_to_note(108, 1, 100)
-      assert note.note == {:c, 8}
+      assert note.note == {:C, 8}
       assert note.duration == 1
       assert note.velocity == 100
     end
   end
-  
+
   describe "Note.note_to_midi/1" do
     test "converts middle C (C4) to MIDI note 60" do
-      note = Note.new({:c, 4}, duration: 1, velocity: 100)
+      note = Note.new({:C, 4}, duration: 1, velocity: 100)
       midi = Note.note_to_midi(note)
       assert midi.note_number == 60
       assert midi.duration == 1
       assert midi.velocity == 100
     end
-    
+
     test "converts C5 to MIDI note 72" do
-      note = Note.new({:c, 5}, duration: 2, velocity: 80)
+      note = Note.new({:C, 5}, duration: 2, velocity: 80)
       midi = Note.note_to_midi(note)
       assert midi.note_number == 72
       assert midi.duration == 2
       assert midi.velocity == 80
     end
-    
+
     test "converts C#4 to MIDI note 61" do
-      note = Note.new({:c!, 4}, duration: 0.5, velocity: 90)
+      note = Note.new({:C!, 4}, duration: 0.5, velocity: 90)
       midi = Note.note_to_midi(note)
       assert midi.note_number == 61
       assert midi.duration == 0.5
       assert midi.velocity == 90
     end
-    
+
     test "converts A0 to MIDI note 21 (lowest piano note)" do
-      note = Note.new({:a, 0}, duration: 1, velocity: 100)
+      note = Note.new({:A, 0}, duration: 1, velocity: 100)
       midi = Note.note_to_midi(note)
       assert midi.note_number == 21
       assert midi.duration == 1
       assert midi.velocity == 100
     end
-    
+
     test "converts C8 to MIDI note 108 (high piano note)" do
-      note = Note.new({:c, 8}, duration: 1, velocity: 100)
+      note = Note.new({:C, 8}, duration: 1, velocity: 100)
       midi = Note.note_to_midi(note)
       assert midi.note_number == 108
       assert midi.duration == 1

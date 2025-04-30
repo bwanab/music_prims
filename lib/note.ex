@@ -10,7 +10,7 @@ defmodule Note do
     # Extract options with defaults
     velocity = Keyword.get(opts, :velocity, nil)
     duration = Keyword.get(opts, :duration, nil)
-    
+
     # Apply conditional defaults based on which values are provided
     velocity = if duration != nil && velocity == nil, do: 100, else: velocity
     duration = if velocity != nil && duration == nil, do: 1, else: duration
@@ -29,7 +29,7 @@ defmodule Note do
   def to_string(%__MODULE__{note: {key, octave}, duration: duration}) do
     key_str = key |> Atom.to_string() |> String.replace("!", "#")
     base = "#{key_str}#{octave}"
-    
+
     case duration do
       nil -> base
       1 -> "#{base}*1/4"  # quarter note
@@ -61,7 +61,7 @@ defmodule Note do
   # Helper functions for MIDI conversions
   defp get_note_name(note_number) do
     # MIDI note numbers: C0 is 12, C4 (middle C) is 60
-    notes = [:c, :c!, :d, :d!, :e, :f, :f!, :g, :g!, :a, :a!, :b]
+    notes = [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
     octave = div(note_number, 12) - 1
     note_index = rem(note_number, 12)
     key = Enum.at(notes, note_index)
@@ -70,7 +70,7 @@ defmodule Note do
 
   defp get_note_number({key, octave}) do
     # Convert {key, octave} to MIDI note number
-    notes = %{c: 0, c!: 1, d: 2, d!: 3, e: 4, f: 5, f!: 6, g: 7, g!: 8, a: 9, a!: 10, b: 11}
+    notes = %{C: 0, C!: 1, Db: 1, D: 2, D!: 3, Eb: 3, E: 4, F: 5, F!: 6, Gb: 6, G: 7, G!: 8, Ab: 8, A: 9, A!: 10, Bb: 10, B: 11}
     base = (octave + 1) * 12
     offset = Map.get(notes, key, 0)
     base + offset
