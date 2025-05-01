@@ -28,6 +28,11 @@ defmodule Note do
     }
   end
 
+  # return a rest of a given duration in quarter notes
+  def rest(duration) do
+    Note.new({:rest, 0}, duration: duration)
+  end
+
   # Format the note following the Guido Music Notation standard
   # https://guidodoc.grame.fr/
   # Examples: C4 (C in octave 4), C#4*1/4 (C# quarter note in octave 4), G3*1/8 (G eighth note in octave 3)
