@@ -1,4 +1,5 @@
 defmodule Note do
+  @behaviour Sonority
   @type key :: atom()
   @type note :: {key, integer}
   @type note_sequence :: keyword(Note)
@@ -85,4 +86,13 @@ defmodule Note do
     offset = Map.get(notes, key, 0)
     base + offset
   end
+
+  @impl Sonority
+  def duration(rest) do
+    rest.duration
+  end
+
+  @impl Sonority
+  def type() do :note end
+
 end

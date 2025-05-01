@@ -85,7 +85,7 @@ defmodule MusicPrims do
   @doc """
   Kind of arbitrary that the octave cutoff is always at C.
   """
-  @spec next_nth(note | raw_note, [atom]) :: note
+  @spec next_nth(note | raw_note, [atom]) :: note | raw_note
   def next_nth(%Note{note: {key, octave}} = note, circle) do
     result = next_nth({key, octave}, circle)
     %{note | note: result}
@@ -167,6 +167,10 @@ defmodule MusicPrims do
   def rotate_octave_around([f|rest], key) when is_tuple(f) do
     scale = [f|rest]
     rotate_octave(scale, Enum.find_index(scale, fn {note, _} -> note == key end))
+  end
+  def rotate_octave_around([f|rest], key) do
+    scale = [f|rest]
+    rotate_octave(scale, Enum.find_index(scale, fn note -> note == key end))
   end
 
   @spec to_midi(note | raw_note | note_sequence | [note_sequence]) :: integer | [integer] | [[integer]]
