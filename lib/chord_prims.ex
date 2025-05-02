@@ -2,7 +2,7 @@ defmodule ChordPrims do
   require Logger
   import MusicPrims
 
-  @type chord :: {MusicPrims.note, atom}
+  @type chord :: {MusicPrims.raw_note, atom}
 
   @major_chord_syms [:I, :II, :III, :IV, :V, :VI, :VII]
   @minor_chord_syms [:i, :ii, :iii, :iv, :v, :vi, :vii]
@@ -84,16 +84,16 @@ defmodule ChordPrims do
     else
       minor_scale(key, octave)
     end
-    
+
     # Extract just the note names from the scale
-    note_names = scale |> Enum.map(fn 
+    note_names = scale |> Enum.map(fn
       %Note{note: {n, _o}} -> n
-      {n, _o} -> n 
+      {n, _o} -> n
     end)
-    
+
     {index, chord_type} = @all_chord_sym_map[sym]
     chord_key = Enum.at(note_names, index)
-    
+
     # Keep the same format as input - full tuple with octave
     {{chord_key, octave}, chord_type}
   end
@@ -107,7 +107,7 @@ defmodule ChordPrims do
   def chord_to_notes({{key, octave}, scale_type}) do
     @chord_type_map[scale_type].(key, octave)
   end
-  
+
   def chord_to_notes({key, scale_type}) when is_atom(key) and is_atom(scale_type) do
     # Default to octave 0 if only key is given
     @chord_type_map[scale_type].(key, 0)
