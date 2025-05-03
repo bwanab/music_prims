@@ -1,4 +1,4 @@
-defmodule Sonority do
+defprotocol Sonority do
   # In music everything that happens is in the context of the flow of time.
   # At any given point in time it seems to me that one of 3 conditions can
   # hold:
@@ -17,28 +17,28 @@ defmodule Sonority do
   #
   # Dealing with these will be at a later iteration.
 
-  @callback duration(any()) :: float()
-  @callback type() :: atom()
-  
+  @spec duration(t()) :: float()
+  def duration(s)
+
+  @spec type(t()) :: atom()
+  def type(s)
+
+
   @doc """
   Gets the type of a Sonority.
-  
+
   ## Examples
-  
+
       iex> note = Note.new({:C, 4})
       iex> Sonority.get_type(note)
       :note
-      
+
       iex> rest = Rest.new(1.0)
       iex> Sonority.get_type(rest)
       :rest
-      
+
       iex> chord = Chord.new([Note.new({:C, 4}), Note.new({:E, 4}), Note.new({:G, 4})], 1.0)
       iex> Sonority.get_type(chord)
       :chord
   """
-  @spec get_type(struct()) :: atom()
-  def get_type(sonority) do
-    sonority.__struct__.type()
-  end
 end

@@ -5,7 +5,7 @@ defmodule MusicPrims.MixProject do
     [
       app: :music_prims,
       version: "0.1.0",
-      elixir: "~> 1.11",
+      elixir: "~> 1.3",
       start_permanent: Mix.env() == :prod,
       deps: deps()
     ]
@@ -21,7 +21,7 @@ defmodule MusicPrims.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.4", only: [:dev], runtime: false}
     ]
   end
 end

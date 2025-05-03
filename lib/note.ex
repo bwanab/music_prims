@@ -1,6 +1,5 @@
 defmodule Note do
-  @behaviour Sonority
-  @type key :: atom()
+    @type key :: atom()
   @type note :: {key, integer}
   @type note_sequence :: keyword(Note)
   @type scale :: note_sequence
@@ -12,6 +11,7 @@ defmodule Note do
 
   defstruct [:note, :duration, :velocity]
 
+  @spec new(note(), keyword()) :: Sonority.t()
   def new(note, opts \\ []) do
     # Extract options with defaults
     velocity = Keyword.get(opts, :velocity, nil)
@@ -87,12 +87,12 @@ defmodule Note do
     base + offset
   end
 
-  @impl Sonority
-  def duration(rest) do
-    rest.duration
+  defimpl Sonority do
+    def duration(rest) do
+      rest.duration
+    end
+
+    def type(_) do :note end
+
   end
-
-  @impl Sonority
-  def type() do :note end
-
 end
