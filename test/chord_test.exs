@@ -127,6 +127,42 @@ defmodule ChordTest do
       assert note_names == [:A, :C, :E]
     end
   end
+  
+  describe "Chord.has_root_enharmonic_with?/2" do
+    test "identifies enharmonic root equivalence with note keys" do
+      # Create a chord with D# root (III in C minor)
+      chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      
+      # Should recognize Eb as enharmonically equivalent to D#
+      assert Chord.has_root_enharmonic_with?(chord, :Eb)
+      
+      # Should recognize D# as the actual root
+      assert Chord.has_root_enharmonic_with?(chord, :D!)
+      
+      # Should not match non-equivalent notes
+      refute Chord.has_root_enharmonic_with?(chord, :D)
+      refute Chord.has_root_enharmonic_with?(chord, :E)
+    end
+    
+    test "identifies enharmonic root equivalence with note tuples" do
+      # Create a chord with F# root (V in B major)
+      chord = Chord.from_roman_numeral(:V, :B, 3, 1.0)
+      
+      # Should recognize Gb as enharmonically equivalent to F#
+      assert Chord.has_root_enharmonic_with?(chord, {:Gb, 3})
+      
+      # Should recognize F# as the actual root
+      assert Chord.has_root_enharmonic_with?(chord, {:F!, 3})
+      
+      # Should not match non-equivalent notes
+      refute Chord.has_root_enharmonic_with?(chord, {:F, 3})
+      refute Chord.has_root_enharmonic_with?(chord, {:G, 3})
+      
+      # Should match based on pitch class, ignoring octave differences
+      assert Chord.has_root_enharmonic_with?(chord, {:F!, 4})
+      assert Chord.has_root_enharmonic_with?(chord, {:Gb, 4})
+    end
+  end
 
   describe "Sonority protocol" do
     test "type returns :chord" do

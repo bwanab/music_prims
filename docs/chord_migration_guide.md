@@ -120,6 +120,34 @@ progression = [
 chord_notes = Enum.map(progression, &Chord.to_notes/1)
 ```
 
+## Enharmonic Equality
+
+The MusicPrims library now includes support for enharmonic equality, which is crucial when working with advanced music theory concepts.
+
+```elixir
+# Check if two notes are enharmonically equal
+Note.enharmonic_equal?({:C!, 4}, {:Db, 4})  # Returns true
+Note.enharmonic_equal?({:F!, 3}, {:Gb, 3})  # Returns true
+
+# Check if two Note structs are enharmonically equal
+c_sharp = Note.new({:C!, 4})
+d_flat = Note.new({:Db, 4})
+Note.enharmonic_equal?(c_sharp, d_flat)  # Returns true
+```
+
+This is particularly useful when working with chords where roots may be written using different enharmonic spellings:
+
+```elixir
+# Create a III chord in C minor (could be spelled as Eb or D#)
+chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+
+# Check if the chord has an Eb root (enharmonically equivalent to D#)
+Chord.has_root_enharmonic_with?(chord, :Eb)  # Returns true
+
+# Works with note tuples too
+Chord.has_root_enharmonic_with?(chord, {:Eb, 4})  # Returns true
+```
+
 ## Integration with MIDI Libraries
 
 When working with MIDI libraries like elixir-midifile, you can use the enhanced Chord functionality:

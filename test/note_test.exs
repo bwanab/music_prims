@@ -158,4 +158,37 @@ defmodule NoteTest do
       assert midi.velocity == 100
     end
   end
+  
+  describe "Note.enharmonic_equal?/2" do
+    test "identifies enharmonic equivalence in raw note tuples" do
+      # Test various sharp/flat equivalents
+      assert Note.enharmonic_equal?({:C!, 4}, {:Db, 4})
+      assert Note.enharmonic_equal?({:D!, 4}, {:Eb, 4})
+      assert Note.enharmonic_equal?({:F!, 4}, {:Gb, 4})
+      assert Note.enharmonic_equal?({:G!, 4}, {:Ab, 4})
+      assert Note.enharmonic_equal?({:A!, 4}, {:Bb, 4})
+      
+      # Test non-equivalent notes
+      refute Note.enharmonic_equal?({:C, 4}, {:D, 4})
+      refute Note.enharmonic_equal?({:E, 4}, {:F, 4})
+      
+      # Test octave differences
+      refute Note.enharmonic_equal?({:C, 4}, {:C, 5})
+      refute Note.enharmonic_equal?({:C!, 4}, {:Db, 5})
+    end
+    
+    test "identifies enharmonic equivalence in Note structs" do
+      c_sharp = Note.new({:C!, 4})
+      d_flat = Note.new({:Db, 4})
+      assert Note.enharmonic_equal?(c_sharp, d_flat)
+      
+      f_sharp = Note.new({:F!, 3})
+      g_flat = Note.new({:Gb, 3})
+      assert Note.enharmonic_equal?(f_sharp, g_flat)
+      
+      c4 = Note.new({:C, 4})
+      c5 = Note.new({:C, 5})
+      refute Note.enharmonic_equal?(c4, c5)
+    end
+  end
 end

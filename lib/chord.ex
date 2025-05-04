@@ -184,17 +184,38 @@ defmodule Chord do
   end
 
   @doc """
-  Calculates the final set of notes in the chord after applying all modifications.
+  Checks if the chord's root is enharmonically equal to the specified note or key.
   
-  This method resolves the actual notes to be played based on the chord's
-  root, quality, and any modifications (bass note, additions, omissions).
+  This is useful when working with chord progressions where you need to check for
+  chords by root, but want to handle enharmonic equivalences properly.
   
   ## Parameters
-    * `chord` - The Chord struct to resolve
+    * `chord` - The Chord struct to check
+    * `note` - The note or key to compare against, either as a note tuple or atom
     
-  ## Returns
-    * A list of Note structs representing the final chord voicing
+  ## Examples
+      
+      iex> chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      iex> Chord.has_root_enharmonic_with?(chord, :Eb)
+      true
+      
+      iex> chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      iex> Chord.has_root_enharmonic_with?(chord, {:Eb, 4})
+      true
   """
+  def has_root_enharmonic_with?(chord, note) when is_atom(note) do
+    Note.enharmonic_equal?({chord.root, 4}, {note, 4})
+  end
+  
+  def has_root_enharmonic_with?(chord, {note, octave}) do
+    # The octave from the chord's root should be preserved, not the input octave
+    # This allows checking if a chord's root matches a note name, regardless of octave
+    case chord.chord do
+      {{_root, root_octave}, _quality} -> Note.enharmonic_equal?({chord.root, root_octave}, {note, root_octave})
+      _ -> Note.enharmonic_equal?({chord.root, octave}, {note, octave})
+    end
+  end
+  
   def to_notes(chord) do
     # Start with base notes
     base_notes = chord.notes || []
