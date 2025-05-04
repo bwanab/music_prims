@@ -39,7 +39,7 @@ defmodule SonorityTest do
     @spec create_sonorities() :: [Sonority.t()]
     def create_sonorities() do
       [
-        Chord.new({[Note.new({:A, 4}, duration: 1)], :major}, 1.0),
+        Chord.from_root_and_quality(:A, :major, 4, 1.0),
         Chord.new({{:D, 4}, :minor}, 1.0),
         Rest.new(1),
         Note.new({:A, 4}, duration: 1),
