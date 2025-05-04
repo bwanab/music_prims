@@ -1,22 +1,23 @@
 defprotocol Sonority do
-  # In music everything that happens is in the context of the flow of time.
-  # At any given point in time it seems to me that one of 3 conditions can
-  # hold:
-  # 1) a single note,
-  # 2) a chord (i.e. multiple notes),
-  # 3) a rest.
-  # Further, any flow of music can be partitioned into a
-  # discreet set of those events each of which has a duration.
-  # That is what this module type along with Note, Chord, and Rest represents.
-  #
-  # t's worth noting that real musical performance often blurs these boundaries. Elements like:
-  # 1) Articulations (slurs, staccato)
-  # 2) Continuous pitch changes (glissando, portamento)
-  # 3) Timbral modifications (vibrato, tremolo)
-  # 4) Dynamic changes (crescendo, diminuendo)
-  #
-  # Dealing with these will be at a later iteration.
+  @doc """
+  In music everything that happens is in the context of the flow of time.
+  At any given point in time on a given track one of 3 conditions can
+  hold:
+  1) a single note,
+  2) a chord (i.e. multiple notes),
+  3) a rest.
+  Further, any flow of music can be partitioned into a
+  discreet set of those events each of which has a duration.
+  That is what this module type along with Note, Chord, and Rest represents.
 
+  It's worth noting that real musical performance often blurs these boundaries. Elements like:
+  1) Articulations (slurs, staccato)
+  2) Continuous pitch changes (glissando, portamento)
+  3) Timbral modifications (vibrato, tremolo)
+  4) Dynamic changes (crescendo, diminuendo)
+
+  Dealing with these will be at a later iteration.
+"""
   @spec duration(t()) :: float()
   def duration(s)
 
