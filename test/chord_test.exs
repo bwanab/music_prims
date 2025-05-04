@@ -68,6 +68,66 @@ defmodule ChordTest do
     end
   end
   
+  describe "Chord.from_roman_numeral/5" do
+    test "creates a major I chord in C" do
+      chord = Chord.from_roman_numeral(:I, :C, 4, 4.0)
+      assert chord.root == :C
+      assert chord.quality == :major
+      assert chord.duration == 4.0
+      
+      # Check that notes match C major
+      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      assert note_names == [:C, :E, :G]
+    end
+    
+    test "creates a minor ii chord in C" do
+      chord = Chord.from_roman_numeral(:ii, :C, 4, 2.0)
+      assert chord.root == :D
+      assert chord.quality == :minor
+      assert chord.duration == 2.0
+      
+      # Check that notes match D minor
+      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      assert note_names == [:D, :F, :A]
+    end
+    
+    test "creates a dominant V7 chord in G" do
+      chord = Chord.from_roman_numeral(:V7, :G, 3, 1.0)
+      assert chord.root == :D
+      assert chord.quality == :dominant_seventh
+      assert chord.duration == 1.0
+      
+      # Check that notes match D7
+      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      assert note_names == [:D, :F!, :A, :C]
+    end
+    
+    test "creates a major III chord in C minor" do
+      chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      
+      # The chord is stored as a D# major chord (using D! in our system) 
+      # but the notes themselves are represented with their enharmonic Eb major equivalents
+      assert chord.root == :D!
+      assert chord.quality == :major
+      assert chord.duration == 1.0
+      
+      # The actual notes are in Eb major (enharmonic equivalent)
+      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      assert note_names == [:Eb, :G, :Bb]
+    end
+    
+    test "creates a minor i chord in A minor" do
+      chord = Chord.from_roman_numeral(:i, :A, 4, 2.0, :minor)
+      assert chord.root == :A
+      assert chord.quality == :minor
+      assert chord.duration == 2.0
+      
+      # Check that notes match A minor
+      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      assert note_names == [:A, :C, :E]
+    end
+  end
+
   describe "Sonority protocol" do
     test "type returns :chord" do
       chord = Chord.from_root_and_quality(:C, :major)

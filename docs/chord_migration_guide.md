@@ -26,7 +26,7 @@ Chord.new({{:C, 4}, :major}, 1.0)
 
 ## Using the Enhanced API
 
-For new code, we recommend using the more explicit constructor and modifiers:
+For new code, we recommend using the more explicit constructors and modifiers:
 
 ```elixir
 # Create a basic C major chord
@@ -41,6 +41,45 @@ c_add9 = Chord.from_root_and_quality(:C, :major)
 
 # Create a C major chord without the fifth
 c_no5 = Chord.from_root_and_quality(:C, :major) |> Chord.with_omissions([5])
+```
+
+## Creating Chords from Roman Numerals
+
+The new `from_roman_numeral` function allows you to directly create chords from Roman numerals in a specific key:
+
+```elixir
+# Create a I chord in C major (C major chord)
+I_chord = Chord.from_roman_numeral(:I, :C, 4, 1.0)
+
+# Create a V7 chord in G major (D7 chord)
+V7_chord = Chord.from_roman_numeral(:V7, :G, 3, 2.0)
+
+# Create a ii chord in F major (G minor chord)
+ii_chord = Chord.from_roman_numeral(:ii, :F, 4, 4.0)
+
+# You can also specify :minor as the scale type for Roman numerals in minor keys
+# Create a III chord in C minor (Eb major chord)
+III_chord = Chord.from_roman_numeral(:III, :C, 4, 4.0, :minor)
+```
+
+This is especially useful when creating chord progressions using Roman numeral analysis:
+
+```elixir
+# Create a I-IV-V-I progression in C major
+progression = [
+  Chord.from_roman_numeral(:I, :C, 4, 4.0),
+  Chord.from_roman_numeral(:IV, :C, 4, 4.0),
+  Chord.from_roman_numeral(:V, :C, 4, 4.0),
+  Chord.from_roman_numeral(:I, :C, 4, 4.0)
+]
+
+# Create a i-iv-V-i progression in A minor
+minor_progression = [
+  Chord.from_roman_numeral(:i, :A, 4, 4.0, :minor),
+  Chord.from_roman_numeral(:iv, :A, 4, 4.0, :minor),
+  Chord.from_roman_numeral(:V, :A, 4, 4.0, :minor),
+  Chord.from_roman_numeral(:i, :A, 4, 4.0, :minor)
+]
 ```
 
 ## Converting to Notes
@@ -83,10 +122,10 @@ chord_notes = Enum.map(progression, &Chord.to_notes/1)
 
 ## Integration with MIDI Libraries
 
-When working with MIDI libraries like elixir-midifile, you can still use the enhanced Chord functionality:
+When working with MIDI libraries like elixir-midifile, you can use the enhanced Chord functionality:
 
 ```elixir
-# Create a track with a chord progression
+# Create a track with a chord progression using root and quality
 chords = [
   Chord.from_root_and_quality(:C, :major, 4, 1.0),
   Chord.from_root_and_quality(:F, :major, 4, 1.0),
@@ -96,4 +135,22 @@ chords = [
 
 # The chord's to_notes method will be used when necessary
 track = Midifile.Track.new("Chord Progression", chords)
+```
+
+Or, you can create progressions more intuitively using Roman numerals:
+
+```elixir
+# Create a chord progression in C major using Roman numerals
+chords = [
+  Chord.from_roman_numeral(:I, :C, 4, 4.0),   # C major
+  Chord.from_roman_numeral(:IV, :C, 4, 4.0),  # F major
+  Chord.from_roman_numeral(:V7, :C, 4, 4.0),  # G dominant 7th
+  Chord.from_roman_numeral(:I, :C, 4, 4.0)    # C major
+]
+
+# Create a random progression with 10 chords
+random_numerals = ChordPrims.random_progression(10, 1)
+random_chords = Enum.map(random_numerals, fn numeral ->
+  Chord.from_roman_numeral(numeral, :C, 4, 4.0)
+end)
 ```

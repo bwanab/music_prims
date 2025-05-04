@@ -129,6 +129,61 @@ defmodule Chord do
   end
 
   @doc """
+  Creates a chord from a Roman numeral, key, and optional octave, duration, and scale type.
+  
+  This function allows direct creation of chords from Roman numerals in a specific key.
+  
+  ## Parameters
+    * `roman_numeral` - The Roman numeral symbol (e.g., :I, :ii, :V7)
+    * `key` - The key to interpret the Roman numeral in (e.g., :C for C major)
+    * `octave` - The octave for the root note (default: 4)
+    * `duration` - The duration of the chord in beats (default: 1.0)
+    * `scale_type` - The scale type (:major or :minor) to interpret the Roman numeral in (default: :major)
+    
+  ## Returns
+    * A new Chord struct
+    
+  ## Examples
+      # Creates a C major chord (I in C major) in octave 4 with duration 4.0
+      iex> chord = Chord.from_roman_numeral(:I, :C, 4, 4.0)
+      iex> chord.root
+      :C
+      iex> chord.quality
+      :major
+      
+      # Creates a D dominant seventh chord (V7 in G major) in octave 3 with duration 2.0
+      iex> chord = Chord.from_roman_numeral(:V7, :G, 3, 2.0)
+      iex> chord.root
+      :D
+      iex> chord.quality
+      :dominant_seventh
+      
+      # Creates a D# major chord (III in C minor) in octave 4 with duration 1.0
+      # Note: D# is enharmonic with Eb but our implementation uses D#
+      iex> chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      iex> chord.root
+      :D!
+      iex> chord.quality
+      :major
+  """
+  def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major) do
+    # Convert Roman numeral to chord using ChordPrims
+    chord_sym = ChordPrims.chord_sym_to_chord(roman_numeral, {{key, octave}, scale_type})
+    
+    # Extract root and quality from the chord symbol
+    {{root, chord_octave}, quality} = chord_sym
+    
+    # Create the chord
+    %__MODULE__{
+      chord: chord_sym,
+      root: root,
+      quality: quality,
+      notes: ChordTheory.get_standard_notes(root, quality, chord_octave),
+      duration: duration
+    }
+  end
+
+  @doc """
   Calculates the final set of notes in the chord after applying all modifications.
   
   This method resolves the actual notes to be played based on the chord's
