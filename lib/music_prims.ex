@@ -42,6 +42,7 @@ defmodule MusicPrims do
 
 
   # chord intervals
+
   @major_triad [0, 4, 7]
   @minor_triad [0, 3, 7]
   @augmented_triad [0, 4, 8]
@@ -55,6 +56,39 @@ defmodule MusicPrims do
   @minor_major_seventh @minor_triad ++ [@major_7th]
   @augmented_major_seventh @augmented_triad ++ [@major_7th]
   @augmented_seventh @augmented_triad ++ [@minor_7th]
+
+  def major_triad() do @major_triad end
+  def minor_triad() do @minor_triad end
+  def augmented_triad() do @augmented_triad end
+  def diminished_triad() do @diminished_triad end
+
+  def dominant_seventh() do @dominant_seventh end
+  def major_seventh() do @major_seventh end
+  def minor_seventh() do @minor_seventh end
+  def half_diminshed_seventh() do @half_diminshed_seventh end
+  def diminished_seventh() do @diminished_seventh end
+  def minor_major_seventh() do @minor_major_seventh end
+  def augmented_major_seventh() do @augmented_major_seventh end
+  def augmented_seventh() do @augmented_seventh end
+
+  def chord_interval_map do
+    %{
+    @major_triad => :major,
+    @minor_triad => :minor,
+    @augmented_triad => :augmented,
+    @diminished_triad => :diminished,
+
+    @dominant_seventh => :dominant_seventh,
+    @major_seventh => :major_seventh,
+    @minor_seventh => :minor_seventh,
+    @half_diminshed_seventh => :half_diminshed_seventh,
+    @diminished_seventh => :diminished_seventh,
+    @minor_major_seventh => :minor_major_seventh,
+    @augmented_major_seventh => :augmented_major_seventh,
+    @augmented_seventh => :augmented_seventh,
+
+    }
+  end
 
   @spec key(:major | :minor, integer, :sharps | :flats) :: atom
   def key(mode, n_accidentals, which) when mode == :major and which == :sharps do
@@ -97,7 +131,7 @@ defmodule MusicPrims do
     new_key = Enum.at(circle, if index >= length(circle) do 0 else index end)
     octave_up = if gt(key, new_key) do 1 else 0 end
     {map_by_sharp_key(new_key, :normal), octave + octave_up}
-  end
+              end
 
   @spec next_fifth(note | raw_note) :: note | raw_note
   def next_fifth(%Note{} = note) do

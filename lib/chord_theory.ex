@@ -1,21 +1,20 @@
 defmodule ChordTheory do
   @moduledoc """
   Functions for chord theory, analysis, and manipulation.
-  
+
   This module provides utilities for working with chord structures,
   including generating notes for chord symbols, inferring chord types
   from notes, and manipulating chord voicings.
   """
-  
-  
+
   @doc """
   Generates the standard notes for a given chord type.
-  
+
   ## Parameters
     * `key` - The root key of the chord
     * `quality` - The chord quality (e.g., :major, :minor, :dominant_seventh)
     * `octave` - The octave for the root note (default: 0)
-    
+
   ## Returns
     * A list of Note structs representing the chord
   """
@@ -33,31 +32,34 @@ defmodule ChordTheory do
       :minor_major_seventh -> MusicPrims.minor_major_seventh_chord(key, octave)
       :augmented_major_seventh -> MusicPrims.augmented_major_seventh_chord(key, octave)
       :augmented_seventh -> MusicPrims.augmented_seventh_chord(key, octave)
-      _ -> MusicPrims.major_chord(key, octave)  # Default to major if unknown quality
+      # Default to major if unknown quality
+      _ -> MusicPrims.major_chord(key, octave)
     end
   end
-  
+
   @doc """
   Infers the root and quality of a chord from its notes.
-  
+
   ## Parameters
     * `notes` - A list of Note structs to analyze
-    
+
   ## Returns
     * A tuple of {root_key, quality} where root_key is the inferred root note
       and quality is the inferred chord quality
   """
   def infer_chord_type(notes) do
     # Get note names without octave information
-    note_keys = notes |> Enum.map(fn
-      %Note{note: {key, _}} -> key
-      {key, _} -> key
-    end)
-    
+    note_keys =
+      notes
+      |> Enum.map(fn
+        %Note{note: {key, _}} -> key
+        {key, _} -> key
+      end)
+
     # Basic inference algorithm - can be enhanced in future versions
     # For now, we'll use a simple pattern matching approach
     root = List.first(note_keys)
-    
+
     # Special case for A minor (test needs this)
     if root == :A && Enum.member?(note_keys, :C) && Enum.member?(note_keys, :E) do
       {:A, :minor}
@@ -75,43 +77,92 @@ defmodule ChordTheory do
       end
     end
   end
-  
+
+  def get_note_nums(notes) do
+    note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
+    min = Enum.min(note_nums)
+    Enum.map(note_nums, &(&1 - min))
+  end
+
+  @doc """
+  find_chord_type does the same job as infer_chord_type, but also takes into account
+  possible inversions in the chord notes. Thus, [C, F, A] is correctly identified
+  as an inverted F chord instead of C.
+
+  ## Parameters
+    * `notes` - A list of Note structs to analyze
+
+  ## Returns
+    * A tuple of {{root_key, quality}, inversion} where
+      root_key is the inferred root note
+      quality is the inferred chord quality
+      inversion is the degree of inversion.
+
+  """
+  def find_chord_type(notes) do
+    matches =
+      Enum.map(
+        0..(length(notes) - 1),
+        &get_note_nums(MusicPrims.rotate_notes(notes, &1))
+      )
+      |> Enum.with_index()
+      |> Enum.map(fn {intervals, index} ->
+        {index, Map.get(MusicPrims.chord_interval_map(), intervals)}
+      end)
+      |> Enum.filter(fn {_i, val} -> !is_nil(val) end)
+
+    if length(matches) > 0 do
+      {index, chord_type} = Enum.at(matches, 0)
+      {Enum.at(notes, index).note, chord_type, index}
+    else
+      nil
+    end
+  end
+
   @doc """
   Returns the scale degrees present in a chord.
-  
+
   ## Parameters
     * `root` - The root key of the chord
     * `quality` - The chord quality
-    
+
   ## Returns
     * A list of integers representing scale degrees (1-based)
   """
   def chord_degrees(_root, quality) do
     case quality do
       :major -> [1, 3, 5]
-      :minor -> [1, 3, 5] # b3
-      :diminished -> [1, 3, 5] # b3, b5
-      :augmented -> [1, 3, 5] # #5
-      :dominant_seventh -> [1, 3, 5, 7] # b7
+      # b3
+      :minor -> [1, 3, 5]
+      # b3, b5
+      :diminished -> [1, 3, 5]
+      # #5
+      :augmented -> [1, 3, 5]
+      # b7
+      :dominant_seventh -> [1, 3, 5, 7]
       :major_seventh -> [1, 3, 5, 7]
-      :minor_seventh -> [1, 3, 5, 7] # b3, b7
-      :half_diminished_seventh -> [1, 3, 5, 7] # b3, b5, b7
-      :diminished_seventh -> [1, 3, 5, 7] # b3, b5, bb7
-      _ -> [1, 3, 5] # Default
+      # b3, b7
+      :minor_seventh -> [1, 3, 5, 7]
+      # b3, b5, b7
+      :half_diminished_seventh -> [1, 3, 5, 7]
+      # b3, b5, bb7
+      :diminished_seventh -> [1, 3, 5, 7]
+      # Default
+      _ -> [1, 3, 5]
     end
   end
-  
+
   # Helper function to match chord patterns regardless of inversion
   defp match_chord_pattern?(notes, pattern) do
     # Normalize to C root for pattern matching
     root_note = List.first(notes)
     target_intervals = normalize_to_intervals(notes, root_note)
     pattern_intervals = normalize_to_intervals(pattern, List.first(pattern))
-    
+
     # Compare interval patterns
     Enum.sort(target_intervals) == Enum.sort(pattern_intervals)
   end
-  
+
   # Convert notes to semitone intervals from the root
   defp normalize_to_intervals(notes, root) do
     Enum.map(notes, fn note ->
@@ -121,7 +172,7 @@ defmodule ChordTheory do
       position_of(note) - position_of(root)
     end)
   end
-  
+
   # Get position in chromatic scale (simplified)
   defp position_of(note) do
     case note do
