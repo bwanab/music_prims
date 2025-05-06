@@ -14,53 +14,99 @@ defmodule Chord do
     bass_note: MusicPrims.raw_note() | nil,
     additions: [Note.t()] | nil,
     omissions: [integer()] | nil,
+    inversion: integer(),
     # Legacy field for backward compatibility
     chord: ChordPrims.chord() | nil
   }
 
-  defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :chord]
+  defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :inversion, :chord]
+
+  # Helper function to apply chord inversion
+  defp apply_inversion(notes, inversion) when is_integer(inversion) and inversion >= 0 do
+    if inversion > 0 and inversion < length(notes) do
+      MusicPrims.rotate_notes(notes, inversion)
+    else
+      notes  # Return original notes if inversion is 0 or invalid
+    end
+  end
 
   @doc """
-  Creates a new chord from either a list of notes or a chord symbol.
+  Creates a new chord from either a list of notes, a chord symbol, or the result from infer_chord_type.
   
   This function supports backward compatibility with existing code while
   providing enhanced functionality through the new fields.
   
   ## Parameters
-    * First argument: Either a list of Note structs or a chord symbol tuple
+    * First argument:
+        * A list of Note structs,
+        * A chord symbol tuple of the form {{key, octave}, quality},
+        * Or a tuple from infer_chord_type of the form {{root_key, quality}, inversion}
     * `duration` - The duration of the chord in beats
+    * `inversion` - The inversion degree (0 = root position, 1 = first, etc.) - only applies to chord symbol
     
   ## Returns
     * A new Chord struct
   """
-  # Legacy constructor (backward compatibility) - from notes
+
+  # Constructor that takes the result of infer_chord_type
+  @spec new({{atom() | MusicPrims.raw_note(), atom()}, integer()}, float()) :: Sonority.t()
+  def new({{key, quality}, inversion}, duration) when is_atom(quality) and is_integer(inversion) do
+    # Extract the rootless key and octave from the key
+    {root_key, octave} = case key do
+      {k, o} when is_atom(k) and is_integer(o) -> {k, o}
+      k when is_atom(k) -> {k, 4}  # Default octave if not specified
+    end
+    
+    # Get standard notes for this chord type
+    notes = ChordTheory.get_standard_notes(root_key, quality, octave)
+    
+    # Apply inversion if needed
+    inverted_notes = apply_inversion(notes, inversion)
+    
+    %__MODULE__{
+      notes: inverted_notes,
+      root: key,
+      quality: quality,
+      duration: duration,
+      inversion: inversion,
+      chord: {{root_key, octave}, quality}
+    }
+  end
+
+  # Constructor from notes
   @spec new([Note.t()], float()) :: Sonority.t()
   def new(notes, duration) when is_list(notes) do
-    {inferred_root, inferred_quality} = ChordTheory.infer_chord_type(notes)
+    {{inferred_root, inferred_quality}, inversion} = ChordTheory.infer_chord_type(notes)
     %__MODULE__{
       notes: notes,
       root: inferred_root,
       quality: inferred_quality,
       duration: duration,
+      inversion: inversion,
       chord: nil
     }
   end
 
-  # Legacy constructor (backward compatibility) - from chord symbol
-  @spec new(ChordPrims.chord(), float()) :: Sonority.t()
-  def new(chord = {{key, _octave}, quality}, duration) do
+  # Constructor from chord symbol with optional inversion
+  @spec new(ChordPrims.chord(), float(), integer()) :: Sonority.t()
+  def new(chord = {{key, _octave}, quality}, duration, inversion \\ 0) do
     notes = ChordPrims.chord_to_notes(chord)
+    
+    # Apply inversion if needed
+    inverted_notes = apply_inversion(notes, inversion)
+    
     %__MODULE__{
       chord: chord,
       root: key,
       quality: quality,
-      notes: notes,
-      duration: duration
+      notes: inverted_notes,
+      duration: duration,
+      inversion: inversion
     }
   end
 
   @doc """
-  Creates a chord from a root note, quality, and optional octave and duration.
+  Creates a chord from a root note, quality, and optional octave, duration and inversion.
   
   This is a more explicit constructor that clearly specifies the chord's
   root and quality rather than inferring it.
@@ -70,19 +116,25 @@ defmodule Chord do
     * `quality` - The chord quality (e.g., :major, :minor)
     * `octave` - The octave for the root note (default: 0)
     * `duration` - The duration of the chord in beats (default: 1.0)
+    * `inversion` - The inversion degree (0 = root position, 1 = first, etc.) (default: 0)
     
   ## Returns
     * A new Chord struct
   """
-  def from_root_and_quality(key, quality, octave \\ 0, duration \\ 1.0) do
+  def from_root_and_quality(key, quality, octave \\ 0, duration \\ 1.0, inversion \\ 0) do
     chord = {{key, octave}, quality}
     notes = ChordTheory.get_standard_notes(key, quality, octave)
+    
+    # Apply inversion if needed
+    inverted_notes = apply_inversion(notes, inversion)
+        
     %__MODULE__{
       chord: chord,
       root: key,
       quality: quality,
-      notes: notes,
-      duration: duration
+      notes: inverted_notes,
+      duration: duration,
+      inversion: inversion
     }
   end
 
@@ -129,7 +181,7 @@ defmodule Chord do
   end
 
   @doc """
-  Creates a chord from a Roman numeral, key, and optional octave, duration, and scale type.
+  Creates a chord from a Roman numeral, key, and optional octave, duration, scale type, and inversion.
   
   This function allows direct creation of chords from Roman numerals in a specific key.
   
@@ -139,6 +191,7 @@ defmodule Chord do
     * `octave` - The octave for the root note (default: 4)
     * `duration` - The duration of the chord in beats (default: 1.0)
     * `scale_type` - The scale type (:major or :minor) to interpret the Roman numeral in (default: :major)
+    * `inversion` - The inversion degree (0 = root position, 1 = first, etc.) (default: 0)
     
   ## Returns
     * A new Chord struct
@@ -165,21 +218,37 @@ defmodule Chord do
       :D!
       iex> chord.quality
       :major
+      
+      # Creates a first inversion C major chord (I⁶ in C major) in octave 4 with duration 1.0
+      iex> chord = Chord.from_roman_numeral(:I, :C, 4, 1.0, :major, 1)
+      iex> chord.root
+      :C
+      iex> chord.quality
+      :major
+      iex> chord.inversion
+      1
   """
-  def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major) do
+  def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major, inversion \\ 0) do
     # Convert Roman numeral to chord using ChordPrims
     chord_sym = ChordPrims.chord_sym_to_chord(roman_numeral, {{key, octave}, scale_type})
     
     # Extract root and quality from the chord symbol
     {{root, chord_octave}, quality} = chord_sym
     
+    # Get standard notes for this chord
+    notes = ChordTheory.get_standard_notes(root, quality, chord_octave)
+    
+    # Apply inversion if needed
+    inverted_notes = apply_inversion(notes, inversion)
+    
     # Create the chord
     %__MODULE__{
       chord: chord_sym,
       root: root,
       quality: quality,
-      notes: ChordTheory.get_standard_notes(root, quality, chord_octave),
-      duration: duration
+      notes: inverted_notes,
+      duration: duration,
+      inversion: inversion
     }
   end
 

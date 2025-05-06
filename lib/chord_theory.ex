@@ -38,54 +38,7 @@ defmodule ChordTheory do
   end
 
   @doc """
-  Infers the root and quality of a chord from its notes.
-
-  ## Parameters
-    * `notes` - A list of Note structs to analyze
-
-  ## Returns
-    * A tuple of {root_key, quality} where root_key is the inferred root note
-      and quality is the inferred chord quality
-  """
-  def infer_chord_type(notes) do
-    # Get note names without octave information
-    note_keys =
-      notes
-      |> Enum.map(fn
-        %Note{note: {key, _}} -> key
-        {key, _} -> key
-      end)
-
-    # Basic inference algorithm - can be enhanced in future versions
-    # For now, we'll use a simple pattern matching approach
-    root = List.first(note_keys)
-
-    # Special case for A minor (test needs this)
-    if root == :A && Enum.member?(note_keys, :C) && Enum.member?(note_keys, :E) do
-      {:A, :minor}
-    else
-      cond do
-        # Check for major triad
-        match_chord_pattern?(note_keys, [:C, :E, :G]) -> {root, :major}
-        match_chord_pattern?(note_keys, [:C, :Eb, :G]) -> {root, :minor}
-        match_chord_pattern?(note_keys, [:C, :Eb, :Gb]) -> {root, :diminished}
-        match_chord_pattern?(note_keys, [:C, :E, :G, :Bb]) -> {root, :dominant_seventh}
-        match_chord_pattern?(note_keys, [:C, :E, :G, :B]) -> {root, :major_seventh}
-        match_chord_pattern?(note_keys, [:C, :Eb, :G, :Bb]) -> {root, :minor_seventh}
-        # Default case - if we can't identify the chord type, assume it's a major chord
-        true -> {root, :major}
-      end
-    end
-  end
-
-  def get_note_nums(notes) do
-    note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
-    min = Enum.min(note_nums)
-    Enum.map(note_nums, &(&1 - min))
-  end
-
-  @doc """
-  find_chord_type does the same job as infer_chord_type, but also takes into account
+  Infers the root and quality of a chord from its notes, taking into account
   possible inversions in the chord notes. Thus, [C, F, A] is correctly identified
   as an inverted F chord instead of C.
 
@@ -96,26 +49,44 @@ defmodule ChordTheory do
     * A tuple of {{root_key, quality}, inversion} where
       root_key is the inferred root note
       quality is the inferred chord quality
-      inversion is the degree of inversion.
-
+      inversion is the degree of inversion (0 = root position, 1 = first inversion, etc.)
   """
-  def find_chord_type(notes) do
+  def infer_chord_type(notes) do
+    get_note_nums = fn notes ->
+      note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
+      min = Enum.min(note_nums)
+      Enum.map(note_nums, &(&1 - min))
+    end
+
+    # Try different rotations of the notes to find a known chord pattern
     matches =
       Enum.map(
         0..(length(notes) - 1),
-        &get_note_nums(MusicPrims.rotate_notes(notes, &1))
+        fn rotation_index ->
+          rotated_notes = MusicPrims.rotate_notes(notes, rotation_index)
+          intervals = get_note_nums.(rotated_notes)
+          chord_type = Map.get(MusicPrims.chord_interval_map(), intervals)
+          {rotation_index, chord_type, rotated_notes}
+        end
       )
-      |> Enum.with_index()
-      |> Enum.map(fn {intervals, index} ->
-        {index, Map.get(MusicPrims.chord_interval_map(), intervals)}
-      end)
-      |> Enum.filter(fn {_i, val} -> !is_nil(val) end)
+      |> Enum.filter(fn {_i, chord_type, _rotated_notes} -> !is_nil(chord_type) end)
 
     if length(matches) > 0 do
-      {index, chord_type} = Enum.at(matches, 0)
-      {Enum.at(notes, index).note, chord_type, index}
+      # Get the first match
+      {rotation_index, chord_type, rotated_notes} = Enum.at(matches, 0)
+      
+      # The root is the first note of the rotated collection that matched a chord pattern
+      root_note = Enum.at(rotated_notes, 0).note
+      
+      # The inversion is the rotation index used to transform the input notes
+      # to get to root position (when rotation_index=0)
+      inversion = rotation_index
+      
+      {{root_note, chord_type}, inversion}
     else
-      nil
+      # Return a default value if no matches found
+      # Using the first note as root, assuming major quality, and root position
+      {{List.first(notes).note, :major}, 0}
     end
   end
 
@@ -152,48 +123,52 @@ defmodule ChordTheory do
     end
   end
 
-  # Helper function to match chord patterns regardless of inversion
-  defp match_chord_pattern?(notes, pattern) do
-    # Normalize to C root for pattern matching
-    root_note = List.first(notes)
-    target_intervals = normalize_to_intervals(notes, root_note)
-    pattern_intervals = normalize_to_intervals(pattern, List.first(pattern))
-
-    # Compare interval patterns
-    Enum.sort(target_intervals) == Enum.sort(pattern_intervals)
-  end
-
-  # Convert notes to semitone intervals from the root
-  defp normalize_to_intervals(notes, root) do
-    Enum.map(notes, fn note ->
-      # This is a simplified implementation
-      # In a real implementation, you'd calculate actual semitone distances
-      # For now, just returning the notes as their position in the chromatic scale
-      position_of(note) - position_of(root)
-    end)
-  end
-
-  # Get position in chromatic scale (simplified)
-  defp position_of(note) do
-    case note do
-      :C -> 0
-      :C! -> 1
-      :Db -> 1
-      :D -> 2
-      :D! -> 3
-      :Eb -> 3
-      :E -> 4
-      :F -> 5
-      :F! -> 6
-      :Gb -> 6
-      :G -> 7
-      :G! -> 8
-      :Ab -> 8
-      :A -> 9
-      :A! -> 10
-      :Bb -> 10
-      :B -> 11
-      _ -> 0
-    end
-  end
+  # These helper functions were part of the previous implementation
+  # but are no longer used with the new approach.
+  # They are kept here as comments for reference in case they're needed in the future.
+  
+  # # Helper function to match chord patterns regardless of inversion
+  # defp match_chord_pattern?(notes, pattern) do
+  #   # Normalize to C root for pattern matching
+  #   root_note = List.first(notes)
+  #   target_intervals = normalize_to_intervals(notes, root_note)
+  #   pattern_intervals = normalize_to_intervals(pattern, List.first(pattern))
+  # 
+  #   # Compare interval patterns
+  #   Enum.sort(target_intervals) == Enum.sort(pattern_intervals)
+  # end
+  # 
+  # # Convert notes to semitone intervals from the root
+  # defp normalize_to_intervals(notes, root) do
+  #   Enum.map(notes, fn note ->
+  #     # This is a simplified implementation
+  #     # In a real implementation, you'd calculate actual semitone distances
+  #     # For now, just returning the notes as their position in the chromatic scale
+  #     position_of(note) - position_of(root)
+  #   end)
+  # end
+  # 
+  # # Get position in chromatic scale (simplified)
+  # defp position_of(note) do
+  #   case note do
+  #     :C -> 0
+  #     :C! -> 1
+  #     :Db -> 1
+  #     :D -> 2
+  #     :D! -> 3
+  #     :Eb -> 3
+  #     :E -> 4
+  #     :F -> 5
+  #     :F! -> 6
+  #     :Gb -> 6
+  #     :G -> 7
+  #     :G! -> 8
+  #     :Ab -> 8
+  #     :A -> 9
+  #     :A! -> 10
+  #     :Bb -> 10
+  #     :B -> 11
+  #     _ -> 0
+  #   end
+  # end
 end
