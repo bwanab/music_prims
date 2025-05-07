@@ -104,26 +104,25 @@ defmodule MusicPrimsTest do
       assert normalize(major_chord(:F, 1) |> bump_octave(2, :down)) == [F: 1, A: 1, C: 1]
     end
 
-    test "chord sequence reification" do
-      result = chord_syms_to_chords([:I, :IV, :vi, :V], {{:C, 0}, :major})
-      expected = [{{:C, 0}, :major}, {{:F, 0}, :major}, {{:A, 0}, :minor}, {{:G, 0}, :major}]
-      assert result == expected
+    test "scale tests chord sequence reification" do
+      result = roman_numerals_to_chords([:I, :IV, :vi, :V], {{:C, 0}, :major})
+      assert result == [
+        {{:C, 0}, :major},
+        {{:F, 0}, :major},
+        {{:A, 0}, :minor},
+        {{:G, 0}, :major}
+      ]
     end
 
-    test "chord sequence reification and to midi" do
-      result = Enum.map(chord_syms_to_chords([:I, :IV, :vi, :V], {{:G, 0}, :major}), &(chord_to_notes(&1))
-      |> to_midi
-      |> Enum.map(fn a -> to_string(a) end))
-
-      # Use the actual result as the expected since our implementation has changed the values
-      expected = [
-        ["19", "23", "26"],  # G major chord
-        ["12", "16", "19"],  # C major chord
-        ["16", "19", "23"],  # E minor chord
-        ["14", "18", "21"]   # D major chord
+    test "scale tests chord sequence reification and to midi" do
+      result = Enum.map(roman_numerals_to_chords([:I, :IV, :vi, :V], {{:G, 0}, :major}), &(chord_to_notes(&1)))
+      |> Enum.map(&(to_midi(&1)))
+      assert result == [
+        [19, 23, 26],  # G major chord
+        [12, 16, 19],  # C major chord
+        [16, 19, 23],  # E minor chord
+        [14, 18, 21]   # D major chord
       ]
-
-      assert result == expected
     end
 
   end
