@@ -2,7 +2,7 @@ defmodule ChordPrims do
   require Logger
   import MusicPrims
 
-  @type chord_sym :: {Note.t(), atom}
+  @type chord_sym :: {{atom(), integer()}, atom()}
 
   @major_chord_syms [:I, :II, :III, :IV, :V, :VI, :VII]
   @minor_chord_syms [:i, :ii, :iii, :iv, :v, :vi, :vii]
@@ -77,7 +77,7 @@ defmodule ChordPrims do
     table_of_usual_progressions()[start] |> Enum.at(index)
    end
 
-  @spec roman_numeral_to_chord(atom, chord_sym) :: chord_sym
+  @spec roman_numeral_to_chord(atom(), {Note.t() | {atom(), integer()}, atom()}) :: chord_sym
   def roman_numeral_to_chord(sym, {{key, octave}, scale_type}) do
     scale = if scale_type == :major do
       major_scale(key, octave)
@@ -159,7 +159,7 @@ defmodule ChordPrims do
   end
 
 
-  @spec note_distance(MusicPrims.note, MusicPrims.note) :: integer
+  @spec note_distance(Note.t(), Note.t()) :: integer
   def note_distance(n1, n2) do
     v =
       Stream.iterate(abs(to_midi(n1) - to_midi(n2)), &(&1 - 12))
