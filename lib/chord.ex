@@ -222,7 +222,7 @@ defmodule Chord do
   """
   def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major, inversion \\ 0) do
     # Convert Roman numeral to chord using ChordPrims
-    chord_sym = ChordPrims.chord_sym_to_chord(roman_numeral, {{key, octave}, scale_type})
+    chord_sym = ChordPrims.roman_numeral_to_chord(roman_numeral, {{key, octave}, scale_type})
 
     # Extract root and quality from the chord symbol
     {{root, chord_octave}, quality} = chord_sym
