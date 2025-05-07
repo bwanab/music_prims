@@ -122,16 +122,16 @@ defmodule ChordPrims do
     Enum.map(chords, &(chord_to_notes(&1)))
   end
 
-  @spec chord_sym_to_midi(atom, chord_sym) :: [integer]
-  def chord_sym_to_midi(sym, chord) do
+  @spec roman_numeral_to_midi(atom, chord_sym) :: [integer]
+  def roman_numeral_to_midi(sym, chord) do
     roman_numeral_to_chord(sym, chord)
     |> chord_to_notes
     |> to_midi
   end
 
-  @spec chord_syms_to_midi([atom], chord_sym) :: [[integer]]
-  def chord_syms_to_midi(sym_seq, chord) do
-    Enum.map(sym_seq, &(chord_sym_to_midi(&1, chord)))
+  @spec roman_numerals_to_midi([atom], chord_sym) :: [[integer]]
+  def roman_numerals_to_midi(sym_seq, chord) do
+    Enum.map(sym_seq, &(roman_numeral_to_midi(&1, chord)))
   end
 
   @spec chord_common_notes(chord_sym, chord_sym, boolean) :: integer
