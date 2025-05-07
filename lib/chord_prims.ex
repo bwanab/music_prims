@@ -2,7 +2,7 @@ defmodule ChordPrims do
   require Logger
   import MusicPrims
 
-  @type chord :: {Note.t(), atom}
+  @type chord_sym :: {Note.t(), atom}
 
   @major_chord_syms [:I, :II, :III, :IV, :V, :VI, :VII]
   @minor_chord_syms [:i, :ii, :iii, :iv, :v, :vi, :vii]
@@ -77,8 +77,8 @@ defmodule ChordPrims do
     table_of_usual_progressions()[start] |> Enum.at(index)
    end
 
-  @spec chord_sym_to_chord(atom, chord) :: chord
-  def chord_sym_to_chord(sym, {{key, octave}, scale_type}) do
+  @spec roman_numeral_to_chord(atom, chord_sym) :: chord_sym
+  def roman_numeral_to_chord(sym, {{key, octave}, scale_type}) do
     scale = if scale_type == :major do
       major_scale(key, octave)
     else
@@ -98,16 +98,16 @@ defmodule ChordPrims do
     {{chord_key, octave}, chord_type}
   end
 
-  def chord_sym_to_chord(sym, {%Note{note: {key, octave}}, scale_type}) do
-    chord_sym_to_chord(sym, {{key, octave}, scale_type})
+  def roman_numeral_to_chord(sym, {%Note{note: {key, octave}}, scale_type}) do
+    roman_numeral_to_chord(sym, {{key, octave}, scale_type})
   end
 
-  @spec chord_syms_to_chords([atom], chord) :: [chord]
+  @spec chord_syms_to_chords([atom], chord_sym) :: [chord_sym]
   def chord_syms_to_chords(sym_seq, chord) do
-    Enum.map(sym_seq, fn sym -> chord_sym_to_chord(sym, chord) end)
+    Enum.map(sym_seq, fn sym -> roman_numeral_to_chord(sym, chord) end)
   end
 
-  @spec chord_to_notes(chord) :: MusicPrims.note_sequence
+  @spec chord_to_notes(chord_sym) :: MusicPrims.note_sequence
   def chord_to_notes({{key, octave}, scale_type}) do
     @chord_type_map[scale_type].(key, octave)
   end
@@ -117,24 +117,24 @@ defmodule ChordPrims do
     @chord_type_map[scale_type].(key, 0)
   end
 
-  @spec chords_to_notes([chord]) :: [MusicPrims.note_sequence]
+  @spec chords_to_notes([chord_sym]) :: [MusicPrims.note_sequence]
   def chords_to_notes(chords) do
     Enum.map(chords, &(chord_to_notes(&1)))
   end
 
-  @spec chord_sym_to_midi(atom, chord) :: [integer]
+  @spec chord_sym_to_midi(atom, chord_sym) :: [integer]
   def chord_sym_to_midi(sym, chord) do
-    chord_sym_to_chord(sym, chord)
+    roman_numeral_to_chord(sym, chord)
     |> chord_to_notes
     |> to_midi
   end
 
-  @spec chord_syms_to_midi([atom], chord) :: [[integer]]
+  @spec chord_syms_to_midi([atom], chord_sym) :: [[integer]]
   def chord_syms_to_midi(sym_seq, chord) do
     Enum.map(sym_seq, &(chord_sym_to_midi(&1, chord)))
   end
 
-  @spec chord_common_notes(chord, chord, boolean) :: integer
+  @spec chord_common_notes(chord_sym, chord_sym, boolean) :: integer
   def chord_common_notes(c1, c2, ignore_octave \\ :true) do
     common_notes(chord_to_notes(c1), chord_to_notes(c2), ignore_octave)
   end
@@ -216,8 +216,8 @@ defmodule ChordPrims do
     sum = Enum.zip(p, rotate_any(p, 1))
     |> Enum.map(fn {a, b} ->
       compute_flow(
-        chord_sym_to_chord(a, {{:G, 0}, :major}),
-        chord_sym_to_chord(b, {{:G, 0}, :major}))
+        roman_numeral_to_chord(a, {{:G, 0}, :major}),
+        roman_numeral_to_chord(b, {{:G, 0}, :major}))
     end)
     |> Enum.sum
     sum / length(p)
