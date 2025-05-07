@@ -2,7 +2,7 @@ defmodule ChordPrims do
   require Logger
   import MusicPrims
 
-  @type chord :: {MusicPrims.raw_note, atom}
+  @type chord :: {Note.t(), atom}
 
   @major_chord_syms [:I, :II, :III, :IV, :V, :VI, :VII]
   @minor_chord_syms [:i, :ii, :iii, :iv, :v, :vi, :vii]
@@ -96,6 +96,10 @@ defmodule ChordPrims do
 
     # Keep the same format as input - full tuple with octave
     {{chord_key, octave}, chord_type}
+  end
+
+  def chord_sym_to_chord(sym, {%Note{note: {key, octave}}, scale_type}) do
+    chord_sym_to_chord(sym, {{key, octave}, scale_type})
   end
 
   @spec chord_syms_to_chords([atom], chord) :: [chord]

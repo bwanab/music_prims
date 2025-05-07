@@ -10,34 +10,49 @@ defmodule Note do
   }
 
   defstruct [:note, :duration, :velocity]
-  
+
   @doc """
   Compares two notes for enharmonic equality.
-  
+
   This function checks if two notes are the same pitch, even if they are spelled differently.
   For example, {:D!, 4} and {:Eb, 4} are enharmonically equal.
-  
+
   ## Examples
-  
+
       iex> Note.enharmonic_equal?({:C!, 4}, {:Db, 4})
       true
-      
+
       iex> Note.enharmonic_equal?({:F!, 3}, {:Gb, 3})
       true
-      
+
       iex> Note.enharmonic_equal?({:C, 4}, {:D, 4})
       false
   """
   def enharmonic_equal?({key1, octave1}, {key2, octave2}) do
     get_note_number({key1, octave1}) == get_note_number({key2, octave2})
   end
-  
+
   def enharmonic_equal?(%__MODULE__{note: note1}, %__MODULE__{note: note2}) do
     enharmonic_equal?(note1, note2)
   end
 
-  @spec new(note(), keyword()) :: Sonority.t()
-  def new(note, opts \\ []) do
+  @spec new(note() | t(), keyword()) :: Sonority.t()
+  def new(note_or_struct, opts \\ [])
+
+  def new(%__MODULE__{note: note} = existing_note, opts) do
+    # Extract options with defaults
+    velocity = Keyword.get(opts, :velocity, existing_note.velocity)
+    duration = Keyword.get(opts, :duration, existing_note.duration)
+
+    # Return the struct with specified values
+    %__MODULE__{
+      note: note,
+      duration: duration,
+      velocity: velocity
+    }
+  end
+
+  def new(note, opts) do
     # Extract options with defaults
     velocity = Keyword.get(opts, :velocity, nil)
     duration = Keyword.get(opts, :duration, nil)

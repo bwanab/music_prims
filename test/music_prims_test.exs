@@ -3,7 +3,7 @@ defmodule MusicPrimsTest do
   import MusicPrims
   import ChordPrims
   doctest MusicPrims
-  
+
   # Helper function to normalize output for test assertions
   # Converts both old style keyword lists and new Note structs to a keyword list
   def normalize(notes) do
@@ -37,12 +37,12 @@ defmodule MusicPrimsTest do
     test "fifths and fourths" do
       # Check that the circle_of_5ths function returns the expected list
       assert circle_of_5ths() == [:C, :G, :D, :A, :E, :B, :Gb, :Db, :Ab, :Eb, :Bb, :F]
-      
+
       # Check that the circle_of_4ths function returns the expected list
       assert circle_of_4ths() == [:C, :F, :A!, :D!, :G!, :C!, :F!, :B, :E, :A, :D, :G]
     end
     test "chromatic scale" do
-      assert chromatic_scale({:C, 0}) |> Enum.take(4) == [C: 0, C!: 0, D: 0, Eb: 0]
+      assert chromatic_scale({:C, 0}) |> Enum.take(4) |> to_keyword_list == [C: 0, C!: 0, D: 0, Eb: 0]
     end
     test "first 5 notes of :C :major same as last 5 notes of :A :minor" do
       assert normalize(major_scale(:C, 1) |> Enum.take(5)) ==
@@ -82,23 +82,23 @@ defmodule MusicPrimsTest do
       assert major_seventh_chord(:F) |> to_midi == [17, 21, 24, 28]
       assert major_seventh_chord(:F) |> third_inversion |> to_midi == [28, 29, 33, 36]
     end
-    
+
     test "octave_up on all notes" do
       assert normalize(major_chord(:C) |> octave_up) == [C: 1, E: 1, G: 1]
       assert normalize(major_chord(:F) |> octave_up) == [F: 1, A: 1, C: 2]
       assert normalize(minor_chord(:A) |> octave_up) == [A: 1, C: 2, E: 2]
     end
-    
+
     test "bump_octave up on all notes" do
       assert normalize(major_chord(:C) |> bump_octave(:up)) == [C: 1, E: 1, G: 1]
       assert normalize(major_chord(:F) |> bump_octave(:up)) == [F: 1, A: 1, C: 2]
     end
-    
+
     test "bump_octave down on all notes" do
       assert normalize(major_chord(:C, 1) |> bump_octave(:down)) == [C: 0, E: 0, G: 0]
       assert normalize(major_chord(:F, 1) |> bump_octave(:down)) == [F: 0, A: 0, C: 1]
     end
-    
+
     test "bump_octave on single position" do
       assert normalize(major_chord(:C) |> bump_octave(1, :up)) == [C: 0, E: 1, G: 0]
       assert normalize(major_chord(:F, 1) |> bump_octave(2, :down)) == [F: 1, A: 1, C: 1]
@@ -114,7 +114,7 @@ defmodule MusicPrimsTest do
       result = Enum.map(chord_syms_to_chords([:I, :IV, :vi, :V], {{:G, 0}, :major}), &(chord_to_notes(&1))
       |> to_midi
       |> Enum.map(fn a -> to_string(a) end))
-      
+
       # Use the actual result as the expected since our implementation has changed the values
       expected = [
         ["19", "23", "26"],  # G major chord
@@ -122,7 +122,7 @@ defmodule MusicPrimsTest do
         ["16", "19", "23"],  # E minor chord
         ["14", "18", "21"]   # D major chord
       ]
-      
+
       assert result == expected
     end
 
