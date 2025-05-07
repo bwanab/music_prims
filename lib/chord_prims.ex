@@ -102,8 +102,8 @@ defmodule ChordPrims do
     roman_numeral_to_chord(sym, {{key, octave}, scale_type})
   end
 
-  @spec chord_syms_to_chords([atom], chord_sym) :: [chord_sym]
-  def chord_syms_to_chords(sym_seq, chord) do
+  @spec roman_numerals_to_chords([atom], chord_sym) :: [chord_sym]
+  def roman_numerals_to_chords(sym_seq, chord) do
     Enum.map(sym_seq, fn sym -> roman_numeral_to_chord(sym, chord) end)
   end
 
