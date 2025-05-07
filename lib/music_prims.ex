@@ -57,19 +57,6 @@ defmodule MusicPrims do
   @augmented_major_seventh @augmented_triad ++ [@major_7th]
   @augmented_seventh @augmented_triad ++ [@minor_7th]
 
-  def major_triad() do @major_triad end
-  def minor_triad() do @minor_triad end
-  def augmented_triad() do @augmented_triad end
-  def diminished_triad() do @diminished_triad end
-
-  def dominant_seventh() do @dominant_seventh end
-  def major_seventh() do @major_seventh end
-  def minor_seventh() do @minor_seventh end
-  def half_diminshed_seventh() do @half_diminshed_seventh end
-  def diminished_seventh() do @diminished_seventh end
-  def minor_major_seventh() do @minor_major_seventh end
-  def augmented_major_seventh() do @augmented_major_seventh end
-  def augmented_seventh() do @augmented_seventh end
 
   def chord_interval_map do
     %{
@@ -77,7 +64,6 @@ defmodule MusicPrims do
     @minor_triad => :minor,
     @augmented_triad => :augmented,
     @diminished_triad => :diminished,
-
     @dominant_seventh => :dominant_seventh,
     @major_seventh => :major_seventh,
     @minor_seventh => :minor_seventh,
@@ -86,7 +72,6 @@ defmodule MusicPrims do
     @minor_major_seventh => :minor_major_seventh,
     @augmented_major_seventh => :augmented_major_seventh,
     @augmented_seventh => :augmented_seventh,
-
     }
   end
 

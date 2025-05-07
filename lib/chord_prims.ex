@@ -176,6 +176,25 @@ defmodule ChordPrims do
     |> Enum.sum
   end
 
+  @doc """
+  compute the full distance that separates two chords.
+  For example: {{:C, 4}, :major} to {{:A, 4}, :minor}
+    The notes of C4 maj are C,E,G
+    The notes of F4 min are A,C,E
+
+    since C and E are shared there's no distance, but the distance from
+    G to A is 2 semitones, thus the full distance is 2 for the chord.
+
+  Example 2: {{:C, 4}, :major} to {{:D, 4}, :major}
+    The notes of C4 maj are C,E,G
+    The notes of D4 maj are D,F!,A
+
+    Each of the pairs {C,D}, {E,F!} and {G,A} are 2 semitones each so
+    the full distance is 6
+
+  I truthfully don't know why this is a worthwhile measure and don't remember
+  why I added it in the first place.
+  """
   def compute_flow(c1, c2) when is_list(c1) and is_list(c2) do
     n = length(c2) - 1
     Enum.map(0..n, &(rotate_any(c2, &1)))
