@@ -15,12 +15,10 @@ defmodule Chord do
     additions: [Note.t()] | nil,
     omissions: [integer()] | nil,
     inversion: integer(),
-    # Legacy field for backward compatibility
-    chord: ChordPrims.chord() | nil,
     velocity: integer()
-  }
+  } | Sonority.t()
 
-  defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :inversion, :chord, :velocity]
+  defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :inversion, :velocity]
 
   # Helper function to apply chord inversion
   defp apply_inversion(notes, inversion) when is_integer(inversion) and inversion >= 0 do
@@ -50,7 +48,7 @@ defmodule Chord do
   """
 
   # Constructor that takes the result of infer_chord_type
-  @spec new({{atom() | MusicPrims.raw_note(), atom()}, integer()}, float()) :: Sonority.t()
+  @spec new({{atom(), atom()}, integer()}, float()) :: Sonority.t()
   def new({{key, quality}, inversion}, duration) when is_atom(quality) and is_integer(inversion) do
     # Extract the rootless key and octave from the key
     {root_key, octave} = case key do
@@ -69,8 +67,7 @@ defmodule Chord do
       root: key,
       quality: quality,
       duration: duration,
-      inversion: inversion,
-      chord: {{root_key, octave}, quality}
+      inversion: inversion
     }
   end
 
@@ -83,13 +80,12 @@ defmodule Chord do
       root: inferred_root,
       quality: inferred_quality,
       duration: duration,
-      inversion: inversion,
-      chord: nil
+      inversion: inversion
     }
   end
 
   # Constructor from chord symbol with optional inversion
-  @spec new(ChordPrims.chord(), float(), integer()) :: Sonority.t()
+  @spec new({{atom(), integer()}, atom()}, float(), integer()) :: Sonority.t()
   def new(chord = {{key, _octave}, quality}, duration, inversion \\ 0) do
     notes = ChordPrims.chord_to_notes(chord)
 
@@ -97,7 +93,6 @@ defmodule Chord do
     inverted_notes = apply_inversion(notes, inversion)
 
     %__MODULE__{
-      chord: chord,
       root: key,
       quality: quality,
       notes: inverted_notes,
@@ -109,9 +104,6 @@ defmodule Chord do
   @doc """
   Creates a chord from a root note, quality, and optional octave, duration and inversion.
 
-  This is a more explicit constructor that clearly specifies the chord's
-  root and quality rather than inferring it.
-
   ## Parameters
     * `key` - The root key of the chord
     * `quality` - The chord quality (e.g., :major, :minor)
@@ -122,15 +114,14 @@ defmodule Chord do
   ## Returns
     * A new Chord struct
   """
-  def from_root_and_quality(key, quality, octave \\ 0, duration \\ 1.0, inversion \\ 0) do
-    chord = {{key, octave}, quality}
+  @spec new_from_root(atom(), atom(), integer(), float(), integer()) :: Sonority.t()
+  def new_from_root(key, quality, octave \\ 0, duration \\ 1.0, inversion \\ 0) do
     notes = ChordTheory.get_standard_notes(key, quality, octave)
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
 
     %__MODULE__{
-      chord: chord,
       root: key,
       quality: quality,
       notes: inverted_notes,
@@ -244,7 +235,6 @@ defmodule Chord do
 
     # Create the chord
     %__MODULE__{
-      chord: chord_sym,
       root: root,
       quality: quality,
       notes: inverted_notes,
@@ -280,10 +270,7 @@ defmodule Chord do
   def has_root_enharmonic_with?(chord, {note, octave}) do
     # The octave from the chord's root should be preserved, not the input octave
     # This allows checking if a chord's root matches a note name, regardless of octave
-    case chord.chord do
-      {{_root, root_octave}, _quality} -> Note.enharmonic_equal?({chord.root, root_octave}, {note, root_octave})
-      _ -> Note.enharmonic_equal?({chord.root, octave}, {note, octave})
-    end
+    Note.enharmonic_equal?({chord.root, octave}, {note, octave})
   end
 
   def to_notes(chord) do

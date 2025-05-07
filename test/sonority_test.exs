@@ -37,24 +37,20 @@ defmodule SonorityTest do
     end
 
     @spec create_sonorities() :: [Sonority.t()]
-    def create_sonorities() do
+    defp create_sonorities do
       [
-        Chord.from_root_and_quality(:A, :major, 4, 1.0),
-        Chord.new({{:D, 4}, :minor}, 1.0),
-        Rest.new(1),
-        Note.new({:A, 4}, duration: 1),
-        Note.new({:B, 4}, duration: 1)
+        Note.new({:C, 4}, duration: 1.0),
+        Rest.new(1.0),
+        Chord.new_from_root(:A, :major, 4, 1.0),
+        Note.new({:E, 4}, duration: 1.0),
+        Note.new({:F, 4}, duration: 1.0)
       ]
     end
 
-    test "call function with list of mixed sonorities" do
-
-
-
+    test "Sonority behavior call function with list of mixed sonorities" do
       sonorities = create_sonorities()
       types = Enum.map(sonorities, &Sonority.type/1)
-      assert [:chord, :chord, :rest, :note, :note] == types
-
+      assert [:note, :rest, :chord, :note, :note] == types
     end
   end
 

@@ -1,4 +1,3 @@
-
 # Music Primitives
 
 A collection of music primitives implemented in Elixir.
@@ -41,12 +40,12 @@ f_minor = MusicPrims.minor_chord(:F, 3)  # F minor chord in octave 3
 g7 = MusicPrims.dominant_seventh_chord(:G, 3)  # G dominant 7th chord
 
 # Create chord with struct
-c_major_chord = Chord.from_root_and_quality(:C, :major, 4)
-f_minor_chord = Chord.from_root_and_quality(:F, :minor, 3)
+c_major_chord = Chord.new_from_root(:C, :major, 4)
+f_minor_chord = Chord.new_from_root(:F, :minor, 3)
 
 # Create chord with inversion
-c_major_first_inv = Chord.from_root_and_quality(:C, :major, 4, 1.0, 1)  # First inversion
-g_dom7_third_inv = Chord.from_root_and_quality(:G, :dominant_seventh, 3, 1.0, 3)  # Third inversion
+c_major_first_inv = Chord.new_from_root(:C, :major, 4, 1.0, 1)  # First inversion
+g_dom7_third_inv = Chord.new_from_root(:G, :dominant_seventh, 3, 1.0, 3)  # Third inversion
 
 # Chord from Roman numeral in a key
 c_major_I = Chord.from_roman_numeral(:I, :C, 4)  # C major chord (I chord in C major)
