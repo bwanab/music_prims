@@ -3,8 +3,7 @@ defmodule MusicPrims do
 
   @type key :: atom()
   @type rest :: atom()
-  @type note :: Note.t()  # Use the Note struct for the new implementation
-  @type note_sequence :: [note]
+  @type note_sequence :: [Note.t()]
   @type scale :: note_sequence
   # @type chord :: note_sequence
 
@@ -103,7 +102,7 @@ defmodule MusicPrims do
   @doc """
   Kind of arbitrary that the octave cutoff is always at C.
   """
-  @spec next_nth(note, [atom]) :: note
+  @spec next_nth(Note.t(), [atom]) :: Note.t()
   def next_nth(%Note{note: {key, octave}}, circle) do
     key = map_by_flat_key(key)
     index = Enum.find_index(circle, fn x -> x == key end) + 1
@@ -112,17 +111,17 @@ defmodule MusicPrims do
     Note.new({map_by_sharp_key(new_key, :normal), octave + octave_up})
   end
 
-  @spec next_fifth(note) :: note
+  @spec next_fifth(Note.t()) :: Note.t()
   def next_fifth(%Note{} = note) do
     next_nth(note, @circle_of_fifths)
   end
 
-  @spec next_fourth(note) :: note
+  @spec next_fourth(Note.t()) :: Note.t()
   def next_fourth(%Note{} = note) do
     next_nth(note, @circle_of_fourths)
   end
 
-  @spec next_half_step(note) :: note
+  @spec next_half_step(Note.t()) :: Note.t()
   def next_half_step(%Note{} = note) do
     next_nth(note, @notes)
   end
@@ -138,7 +137,7 @@ defmodule MusicPrims do
     [0|Enum.map(r, &(&1 - f))]
   end
 
-  @spec rotate_notes([note], integer) :: [note]
+  @spec rotate_notes([Note.t()], integer) :: [Note.t()]
   def rotate_notes(notes, n) do
     {l, r} = Enum.split(notes, n)
     r ++ Enum.map(l, fn
@@ -172,7 +171,7 @@ defmodule MusicPrims do
     rotate_octave(scale, Enum.find_index(scale, fn note -> note == key end))
   end
 
-  @spec to_midi(note | note_sequence | [note_sequence]) :: integer | [integer] | [[integer]]
+  @spec to_midi(Note.t() | note_sequence | [note_sequence]) :: integer | [integer] | [[integer]]
   def to_midi(%Note{note: {n, o}, velocity: _velocity}) do
     @midi_notes_map[n] + o * 12
   end
@@ -190,7 +189,7 @@ defmodule MusicPrims do
   end
 
 
-  @spec chromatic_scale(note | {atom, integer}) :: [note]
+  @spec chromatic_scale(Note.t() | {atom, integer}) :: [Note.t()]
   def chromatic_scale(%Note{} = note) do
     Stream.iterate(note, fn a -> next_half_step(a) end) |> Enum.take(12)
   end
@@ -237,7 +236,7 @@ defmodule MusicPrims do
     end)
   end
 
-  @spec key_from_note(note | key) :: key
+  @spec key_from_note(Note.t() | key) :: key
   def key_from_note(n) when is_atom(n) do n end
   def key_from_note(%Note{note: {key, _o}}) do
     key
@@ -258,7 +257,7 @@ defmodule MusicPrims do
     end
    end
 
-  @spec map_by_sharp_key(note | key, atom) :: note | key
+  @spec map_by_sharp_key(Note.t() | key, atom) :: Note.t() | key
   def map_by_sharp_key(value, context \\ :normal)
 
   def map_by_sharp_key(%Note{note: {key, octave}} = note, context) do
@@ -275,7 +274,7 @@ defmodule MusicPrims do
     if is_tuple(nk) do Note.new({k, elem(nk, 1)}) else k end
   end
 
-  @spec map_by_flat_key(note | key) :: note | key
+  @spec map_by_flat_key(Note.t() | key) :: Note.t() | key
   def map_by_flat_key(%Note{note: {key, octave}} = note) do
     mapped_key = map_by_flat_key(key)
     %{note | note: {mapped_key, octave}}
@@ -413,7 +412,7 @@ defmodule MusicPrims do
   @doc """
   Adjust a note's octave up or down by one.
   """
-  @spec bump_octave(note | [note], :up | :down) :: note | [note]
+  @spec bump_octave(Note.t() | [Note.t()], :up | :down) :: Note.t() | [Note.t()]
   def bump_octave(%Note{note: {key, octave}} = note, direction) do
     delta = if direction == :up, do: 1, else: -1
     %{note | note: {key, octave + delta}}
@@ -428,13 +427,13 @@ defmodule MusicPrims do
     Enum.map(notes, &bump_octave(&1, direction))
   end
 
-  @spec bump_octave([note], integer, :up | :down) :: [note]
+  @spec bump_octave([Note.t()], integer, :up | :down) :: [Note.t()]
   def bump_octave(notes = [%Note{} | _], pos, direction) do
     List.update_at(notes, pos, &bump_octave(&1, direction))
   end
 
   # Maintain backward compatibility with existing code
-  @spec octave_up(note) :: note
+  @spec octave_up(Note.t()) :: Note.t()
   def octave_up(%Note{} = note), do: bump_octave(note, :up)
 
   @spec octave_up(note_sequence) :: note_sequence
@@ -497,7 +496,7 @@ defmodule MusicPrims do
   @doc """
   Creates a Note struct from a key and octave
   """
-  @spec make_note(key, integer, keyword()) :: note
+  @spec make_note(key, integer, keyword()) :: Note.t()
   def make_note(key, octave, opts \\ []) do
     Note.new({key, octave}, opts)
   end
@@ -506,7 +505,7 @@ defmodule MusicPrims do
   Converts a list of Note structs to a keyword list in the old format
   For backward compatibility with tests
   """
-  @spec to_keyword_list([note]) :: keyword(integer)
+  @spec to_keyword_list([Note.t()]) :: keyword(integer)
   def to_keyword_list(notes) do
     Enum.map(notes, fn
       %Note{note: {key, octave}} -> {key, octave}
