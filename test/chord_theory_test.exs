@@ -1,6 +1,7 @@
 defmodule ChordTheoryTest do
   use ExUnit.Case
-  doctest ChordTheory
+  import Chord
+
 
   describe "ChordTheory.get_standard_notes/3" do
     test "returns correct notes for major chord" do
@@ -50,7 +51,7 @@ defmodule ChordTheoryTest do
     end
 
     test "identifies a first inversion of a chord" do
-      notes = MusicPrims.first_inversion(MusicPrims.major_chord(:F, 3))
+      notes = first_inversion(major_chord(:F, 3))
       {{root_note, quality}, inversion} = ChordTheory.infer_chord_type(notes)
       assert elem(root_note, 0) == :F
       assert quality == :major
@@ -59,14 +60,14 @@ defmodule ChordTheoryTest do
     end
 
     test "identifies a second inversion of a chord" do
-      notes = MusicPrims.second_inversion(MusicPrims.major_chord(:F, 3))
+      notes = second_inversion(major_chord(:F, 3))
       {{root_note, quality}, inversion} = ChordTheory.infer_chord_type(notes)
       assert elem(root_note, 0) == :F
       assert quality == :major
       # The actual inversion calculation in the implementation
       assert inversion == 1
     end
-    
+
     test "identifies a first inversion of a C major chord" do
       notes = [
         %Note{note: {:E, 4}},
@@ -79,7 +80,7 @@ defmodule ChordTheoryTest do
       # The actual inversion calculation in the implementation
       assert inversion == 2
     end
-    
+
     test "identifies a second inversion of a C major chord" do
       notes = [
         %Note{note: {:G, 4}},
@@ -92,9 +93,9 @@ defmodule ChordTheoryTest do
       # The actual inversion calculation in the implementation
       assert inversion == 1
     end
-    
+
     test "identifies a seventh chord in third inversion" do
-      notes = MusicPrims.third_inversion(MusicPrims.dominant_seventh_chord(:G, 3))
+      notes = third_inversion(dominant_seventh_chord(:G, 3))
       {{root_note, quality}, inversion} = ChordTheory.infer_chord_type(notes)
       assert elem(root_note, 0) == :G
       assert quality == :dominant_seventh

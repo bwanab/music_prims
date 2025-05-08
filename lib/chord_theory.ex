@@ -1,4 +1,5 @@
 defmodule ChordTheory do
+
   @moduledoc """
   Functions for chord theory, analysis, and manipulation.
 
@@ -20,20 +21,20 @@ defmodule ChordTheory do
   """
   def get_standard_notes(key, quality, octave \\ 0) do
     case quality do
-      :major -> MusicPrims.major_chord(key, octave)
-      :minor -> MusicPrims.minor_chord(key, octave)
-      :diminished -> MusicPrims.diminished_chord(key, octave)
-      :augmented -> MusicPrims.augmented_chord(key, octave)
-      :dominant_seventh -> MusicPrims.dominant_seventh_chord(key, octave)
-      :major_seventh -> MusicPrims.major_seventh_chord(key, octave)
-      :minor_seventh -> MusicPrims.minor_seventh_chord(key, octave)
-      :half_diminished_seventh -> MusicPrims.half_diminshed_seventh_chord(key, octave)
-      :diminished_seventh -> MusicPrims.diminished_seventh_chord(key, octave)
-      :minor_major_seventh -> MusicPrims.minor_major_seventh_chord(key, octave)
-      :augmented_major_seventh -> MusicPrims.augmented_major_seventh_chord(key, octave)
-      :augmented_seventh -> MusicPrims.augmented_seventh_chord(key, octave)
+      :major -> Chord.major_chord(key, octave)
+      :minor -> Chord.minor_chord(key, octave)
+      :diminished -> Chord.diminished_chord(key, octave)
+      :augmented -> Chord.augmented_chord(key, octave)
+      :dominant_seventh -> Chord.dominant_seventh_chord(key, octave)
+      :major_seventh -> Chord.major_seventh_chord(key, octave)
+      :minor_seventh -> Chord.minor_seventh_chord(key, octave)
+      :half_diminished_seventh -> Chord.half_diminshed_seventh_chord(key, octave)
+      :diminished_seventh -> Chord.diminished_seventh_chord(key, octave)
+      :minor_major_seventh -> Chord.minor_major_seventh_chord(key, octave)
+      :augmented_major_seventh -> Chord.augmented_major_seventh_chord(key, octave)
+      :augmented_seventh -> Chord.augmented_seventh_chord(key, octave)
       # Default to major if unknown quality
-      _ -> MusicPrims.major_chord(key, octave)
+      _ -> Chord.major_chord(key, octave)
     end
   end
 
@@ -63,7 +64,7 @@ defmodule ChordTheory do
       Enum.map(
         0..(length(notes) - 1),
         fn rotation_index ->
-          rotated_notes = MusicPrims.rotate_notes(notes, rotation_index)
+          rotated_notes = Note.rotate_notes(notes, rotation_index)
           intervals = get_note_nums.(rotated_notes)
           chord_type = Map.get(MusicPrims.chord_interval_map(), intervals)
           {rotation_index, chord_type, rotated_notes}
@@ -74,14 +75,14 @@ defmodule ChordTheory do
     if length(matches) > 0 do
       # Get the first match
       {rotation_index, chord_type, rotated_notes} = Enum.at(matches, 0)
-      
+
       # The root is the first note of the rotated collection that matched a chord pattern
       root_note = Enum.at(rotated_notes, 0).note
-      
+
       # The inversion is the rotation index used to transform the input notes
       # to get to root position (when rotation_index=0)
       inversion = rotation_index
-      
+
       {{root_note, chord_type}, inversion}
     else
       # Return a default value if no matches found
@@ -126,18 +127,18 @@ defmodule ChordTheory do
   # These helper functions were part of the previous implementation
   # but are no longer used with the new approach.
   # They are kept here as comments for reference in case they're needed in the future.
-  
+
   # # Helper function to match chord patterns regardless of inversion
   # defp match_chord_pattern?(notes, pattern) do
   #   # Normalize to C root for pattern matching
   #   root_note = List.first(notes)
   #   target_intervals = normalize_to_intervals(notes, root_note)
   #   pattern_intervals = normalize_to_intervals(pattern, List.first(pattern))
-  # 
+  #
   #   # Compare interval patterns
   #   Enum.sort(target_intervals) == Enum.sort(pattern_intervals)
   # end
-  # 
+  #
   # # Convert notes to semitone intervals from the root
   # defp normalize_to_intervals(notes, root) do
   #   Enum.map(notes, fn note ->
@@ -147,7 +148,7 @@ defmodule ChordTheory do
   #     position_of(note) - position_of(root)
   #   end)
   # end
-  # 
+  #
   # # Get position in chromatic scale (simplified)
   # defp position_of(note) do
   #   case note do

@@ -1,7 +1,9 @@
 defmodule MusicPrimsTest do
   use ExUnit.Case
   import MusicPrims
-  import ChordPrims
+  import Chord
+  import Scale
+  import Note
   doctest MusicPrims
 
   # Helper function to normalize output for test assertions
@@ -9,7 +11,7 @@ defmodule MusicPrimsTest do
   def normalize(notes) do
     cond do
       is_list(notes) && match?([%Note{} | _], notes) ->
-        to_keyword_list(notes)
+        Note.to_keyword_list(notes)
       is_list(notes) && Keyword.keyword?(notes) ->
         notes
       true ->
@@ -42,7 +44,7 @@ defmodule MusicPrimsTest do
       assert circle_of_4ths() == [:C, :F, :A!, :D!, :G!, :C!, :F!, :B, :E, :A, :D, :G]
     end
     test "chromatic scale" do
-      assert chromatic_scale({:C, 0}) |> Enum.take(4) |> to_keyword_list == [C: 0, C!: 0, D: 0, Eb: 0]
+      assert Note.chromatic_scale({:C, 0}) |> Enum.take(4) |> Note.to_keyword_list == [C: 0, C!: 0, D: 0, Eb: 0]
     end
     test "first 5 notes of :C :major same as last 5 notes of :A :minor" do
       assert normalize(major_scale(:C, 1) |> Enum.take(5)) ==
@@ -78,30 +80,30 @@ defmodule MusicPrimsTest do
     end
 
     test "midi conversions" do
-      assert major_scale(:C) |> to_midi == [12, 14, 16, 17, 19, 21, 23]
-      assert major_seventh_chord(:F) |> to_midi == [17, 21, 24, 28]
-      assert major_seventh_chord(:F) |> third_inversion |> to_midi == [28, 29, 33, 36]
+      assert major_scale(:C) |> Note.to_midi == [12, 14, 16, 17, 19, 21, 23]
+      assert major_seventh_chord(:F) |> Note.to_midi == [17, 21, 24, 28]
+      assert major_seventh_chord(:F) |> third_inversion |> Note.to_midi == [28, 29, 33, 36]
     end
 
     test "octave_up on all notes" do
-      assert normalize(major_chord(:C) |> octave_up) == [C: 1, E: 1, G: 1]
-      assert normalize(major_chord(:F) |> octave_up) == [F: 1, A: 1, C: 2]
-      assert normalize(minor_chord(:A) |> octave_up) == [A: 1, C: 2, E: 2]
+      assert normalize(major_chord(:C) |> Note.octave_up) == [C: 1, E: 1, G: 1]
+      assert normalize(major_chord(:F) |> Note.octave_up) == [F: 1, A: 1, C: 2]
+      assert normalize(minor_chord(:A) |> Note.octave_up) == [A: 1, C: 2, E: 2]
     end
 
     test "bump_octave up on all notes" do
-      assert normalize(major_chord(:C) |> bump_octave(:up)) == [C: 1, E: 1, G: 1]
-      assert normalize(major_chord(:F) |> bump_octave(:up)) == [F: 1, A: 1, C: 2]
+      assert normalize(major_chord(:C) |> Note.bump_octave(:up)) == [C: 1, E: 1, G: 1]
+      assert normalize(major_chord(:F) |> Note.bump_octave(:up)) == [F: 1, A: 1, C: 2]
     end
 
     test "bump_octave down on all notes" do
-      assert normalize(major_chord(:C, 1) |> bump_octave(:down)) == [C: 0, E: 0, G: 0]
-      assert normalize(major_chord(:F, 1) |> bump_octave(:down)) == [F: 0, A: 0, C: 1]
+      assert normalize(major_chord(:C, 1) |> Note.bump_octave(:down)) == [C: 0, E: 0, G: 0]
+      assert normalize(major_chord(:F, 1) |> Note.bump_octave(:down)) == [F: 0, A: 0, C: 1]
     end
 
     test "bump_octave on single position" do
-      assert normalize(major_chord(:C) |> bump_octave(1, :up)) == [C: 0, E: 1, G: 0]
-      assert normalize(major_chord(:F, 1) |> bump_octave(2, :down)) == [F: 1, A: 1, C: 1]
+      assert normalize(major_chord(:C) |> Note.bump_octave(1, :up)) == [C: 0, E: 1, G: 0]
+      assert normalize(major_chord(:F, 1) |> Note.bump_octave(2, :down)) == [F: 1, A: 1, C: 1]
     end
 
     test "scale tests chord sequence reification" do

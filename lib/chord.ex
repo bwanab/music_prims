@@ -5,6 +5,7 @@ defmodule Chord do
   A chord can be created either from a list of Note structs or from a chord symbol.
   This module provides functions for creating, modifying, and analyzing chords.
   """
+  @type chord_sym :: {{atom(), integer()}, atom()}
 
   @type t :: %__MODULE__{
     root: MusicPrims.key() | nil,
@@ -20,10 +21,11 @@ defmodule Chord do
 
   defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :inversion, :velocity]
 
+
   # Helper function to apply chord inversion
   defp apply_inversion(notes, inversion) when is_integer(inversion) and inversion >= 0 do
     if inversion > 0 and inversion < length(notes) do
-      MusicPrims.rotate_notes(notes, inversion)
+      Note.rotate_notes(notes, inversion)
     else
       notes  # Return original notes if inversion is 0 or invalid
     end
@@ -87,7 +89,7 @@ defmodule Chord do
   # Constructor from chord symbol with optional inversion
   @spec new({{atom(), integer()}, atom()}, float(), integer()) :: Sonority.t()
   def new(chord = {{key, _octave}, quality}, duration, inversion \\ 0) do
-    notes = ChordPrims.chord_to_notes(chord)
+    notes = chord_to_notes(chord)
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
@@ -222,7 +224,7 @@ defmodule Chord do
   """
   def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major, inversion \\ 0) do
     # Convert Roman numeral to chord using ChordPrims
-    chord_sym = ChordPrims.roman_numeral_to_chord(roman_numeral, {{key, octave}, scale_type})
+    chord_sym = roman_numeral_to_chord(roman_numeral, {{key, octave}, scale_type})
 
     # Extract root and quality from the chord symbol
     {{root, chord_octave}, quality} = chord_sym
@@ -308,4 +310,266 @@ defmodule Chord do
     def duration(chord), do: chord.duration
     def type(_), do: :chord
   end
+
+  import Scale
+
+  @type chord :: [Note.t()]
+
+  @doc """
+  Build a major chord from the given key and octave.
+  """
+  @spec major_chord(atom, integer) :: chord
+  def major_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 4, 7], octave)
+  end
+
+  @doc """
+  Build a minor chord from the given key and octave.
+  """
+  @spec minor_chord(atom, integer) :: chord
+  def minor_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 3, 7], octave)
+  end
+
+  @doc """
+  Build an augmented chord from the given key and octave.
+  """
+  @spec augmented_chord(atom, integer) :: chord
+  def augmented_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 4, 8], octave)
+  end
+
+  @doc """
+  Build a diminished chord from the given key and octave.
+  """
+  @spec diminished_chord(atom, integer) :: chord
+  def diminished_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 3, 6], octave)
+  end
+
+  @doc """
+  Build a dominant seventh chord from the given key and octave.
+  """
+  @spec dominant_seventh_chord(atom, integer) :: chord
+  def dominant_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 4, 7, 10], octave)
+  end
+
+  @doc """
+  Build a major seventh chord from the given key and octave.
+  """
+  @spec major_seventh_chord(atom, integer) :: chord
+  def major_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 4, 7, 11], octave)
+  end
+
+  @doc """
+  Build a minor seventh chord from the given key and octave.
+  """
+  @spec minor_seventh_chord(atom, integer) :: chord
+  def minor_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 3, 7, 10], octave)
+  end
+
+  @doc """
+  Build a half-diminished seventh chord from the given key and octave.
+  """
+  @spec half_diminshed_seventh_chord(atom, integer) :: chord
+  def half_diminshed_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 3, 6, 10], octave)
+  end
+
+  @doc """
+  Build a diminished seventh chord from the given key and octave.
+  """
+  @spec diminished_seventh_chord(atom, integer) :: chord
+  def diminished_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 3, 6, 9], octave)
+  end
+
+  @doc """
+  Build a minor-major seventh chord from the given key and octave.
+  """
+  @spec minor_major_seventh_chord(atom, integer) :: chord
+  def minor_major_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 3, 7, 11], octave)
+  end
+
+  @doc """
+  Build an augmented major seventh chord from the given key and octave.
+  """
+  @spec augmented_major_seventh_chord(atom, integer) :: chord
+  def augmented_major_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 4, 8, 11], octave)
+  end
+
+  @doc """
+  Build an augmented seventh chord from the given key and octave.
+  """
+  @spec augmented_seventh_chord(atom, integer) :: chord
+  def augmented_seventh_chord(key, octave \\ 0) do
+    build_note_seq(key, [0, 4, 8, 10], octave)
+  end
+
+  @doc """
+  Get the first inversion of a chord.
+  """
+  @spec first_inversion(chord) :: chord
+  def first_inversion(chord) do
+    rotate_notes(chord, 1)
+  end
+
+  @doc """
+  Get the second inversion of a chord.
+  """
+  @spec second_inversion(chord) :: chord
+  def second_inversion(chord) do
+    rotate_notes(chord, 2)
+  end
+
+  @doc """
+  Get the third inversion of a chord.
+  """
+  @spec third_inversion(chord) :: chord
+  def third_inversion(chord) do
+    rotate_notes(chord, 3)
+  end
+
+  @spec roman_numeral_to_chord(atom(), {Note.t() | {atom(), integer()}, atom()}) :: chord
+  def roman_numeral_to_chord(sym, {{key, octave}, scale_type}) do
+    scale = if scale_type == :major do
+      major_scale(key, octave)
+    else
+      minor_scale(key, octave)
+    end
+    # Extract just the note names from the scale
+    note_names = scale |> Enum.map(fn
+      %Note{note: {n, _o}} -> n
+      {n, _o} -> n
+    end)
+
+    {index, chord_type} = ChordPrims.all_chord_sym_map[sym]
+    chord_key = Enum.at(note_names, index)
+
+    # Keep the same format as input - full tuple with octave
+    {{chord_key, octave}, chord_type}
+  end
+  def roman_numeral_to_chord(sym, {%Note{note: {key, octave}}, scale_type}) do
+    roman_numeral_to_chord(sym, {{key, octave}, scale_type})
+  end
+
+  @spec roman_numerals_to_chords([atom], chord) :: [chord]
+  def roman_numerals_to_chords(sym_seq, chord) do
+    Enum.map(sym_seq, fn sym -> roman_numeral_to_chord(sym, chord) end)
+  end
+
+  @spec chord_to_notes(chord_sym) :: [Note.t()]
+  def chord_to_notes({{key, octave}, scale_type}) do
+    chord_type_map()[scale_type].(key, octave)
+  end
+
+  def chord_to_notes({key, scale_type}) when is_atom(key) and is_atom(scale_type) do
+    # Default to octave 0 if only key is given
+    chord_type_map()[scale_type].(key, 0)
+  end
+
+  @spec chords_to_notes([chord_sym]) :: [Note.t()]
+  def chords_to_notes(chords) do
+    Enum.map(chords, &(chord_to_notes(&1)))
+  end
+
+  @spec roman_numeral_to_midi(atom, chord_sym) :: [integer]
+  def roman_numeral_to_midi(sym, chord) do
+    roman_numeral_to_chord(sym, chord)
+    |> chord_to_notes
+    |> Note.to_midi
+  end
+
+  @spec roman_numerals_to_midi([atom], chord_sym) :: [[integer]]
+  def roman_numerals_to_midi(sym_seq, chord) do
+    Enum.map(sym_seq, &(roman_numeral_to_midi(&1, chord)))
+  end
+
+  @spec chord_common_notes(chord_sym, chord_sym, boolean) :: integer
+  def chord_common_notes(c1, c2, ignore_octave \\ :true) do
+    Note.common_notes(chord_to_notes(c1), chord_to_notes(c2), ignore_octave)
+  end
+
+
+  @doc """
+  compute the full distance that separates two chords.
+  For example: {{:C, 4}, :major} to {{:A, 4}, :minor}
+    The notes of C4 maj are C,E,G
+    The notes of F4 min are A,C,E
+
+    since C and E are shared there's no distance, but the distance from
+    G to A is 2 semitones, thus the full distance is 2 for the chord.
+
+  Example 2: {{:C, 4}, :major} to {{:D, 4}, :major}
+    The notes of C4 maj are C,E,G
+    The notes of D4 maj are D,F!,A
+
+    Each of the pairs {C,D}, {E,F!} and {G,A} are 2 semitones each so
+    the full distance is 6
+
+  I truthfully don't know why this is a worthwhile measure and don't remember
+  why I added it in the first place.
+  """
+  def compute_flow(c1, c2) when is_list(c1) and is_list(c2) do
+    n = length(c2) - 1
+    Enum.map(0..n, &(rotate_any(c2, &1)))
+    # |> IO.inspect
+    |> Enum.map(fn c2p -> compute_one_flow(c1, c2p) end)
+    # |> IO.inspect
+    |> Enum.min
+  end
+
+  def compute_flow(c1, c2) do
+    compute_flow(chord_to_notes(c1), chord_to_notes(c2))
+  end
+
+  def compute_flow(p) do
+    sum = Enum.zip(p, rotate_any(p, 1))
+    |> Enum.map(fn {a, b} ->
+      compute_flow(
+        roman_numeral_to_chord(a, {{:G, 0}, :major}),
+        roman_numeral_to_chord(b, {{:G, 0}, :major}))
+    end)
+    |> Enum.sum
+    sum / length(p)
+  end
+
+
+  @spec compute_one_flow(MusicPrims.note_sequence, MusicPrims.note_sequence) :: integer
+  def compute_one_flow(c1, c2) do
+    Enum.zip(c1, c2)
+    # |> IO.inspect
+    |> Enum.map(fn {n1, n2} ->
+      Note.note_distance(n1, n2)
+    end)
+    # |> IO.inspect
+    |> Enum.sum
+  end
+  @doc """
+  Rotate a list by the given amount.
+  """
+  @spec rotate_any([any], integer) :: [any]
+  def rotate_any(list, n) do
+    {l, r} = Enum.split(list, n)
+    r ++ l
+  end
+
+
+  @chord_type_map %{:major => &Chord.major_chord/2,
+                    :minor => &Chord.minor_chord/2,
+                    :diminished => &Chord.diminished_chord/2,
+                    :dominant_seventh => &Chord.dominant_seventh_chord/2,
+                    :major_seventh => &Chord.major_seventh_chord/2,
+                    :minor_seventh => &Chord.minor_seventh_chord/2
+  }
+
+  def chord_type_map() do
+    @chord_type_map
+  end
+
 end
