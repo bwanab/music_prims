@@ -22,15 +22,13 @@ defmodule MusicPrims do
   @pent_intervals [0, 3, 5, 7, 10]
   @blues_intervals [0, 3, 5, 6, 7, 10]
   @major_intervals [0, 2, 4, 5, 7, 9, 11]
-  @modes [major: 0, dorian: 1, phrygian: 2, lydian: 3, mixolodian: 4, minor: 5,lociran: 6]
-  @scale_intervals Enum.into(Enum.zip(@modes, @major_intervals), %{})
+  @modes [major: 0, dorian: 1, phrygian: 2, lydian: 3, mixolodian: 4, minor: 5, locrian: 6]
   @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
   @flat_notes [:C, :Db, :D, :Eb, :E, :F, :Gb, :G, :Ab, :A, :Bb, :B]
   @sharp_midi_notes Enum.with_index(@notes) |> Enum.map(fn {a, b} -> {a, b+12} end)
   @flat_midi_notes Enum.with_index(@flat_notes) |> Enum.map(fn {a, b} -> {a, b+12} end)
   @midi_notes @sharp_midi_notes ++ @flat_midi_notes
 
-  @notes_by_midi Enum.into(Enum.map(@midi_notes, fn {note, midi} -> {midi, note} end), %{})
   @midi_notes_map Enum.into(@midi_notes, %{})
 
   # interesting intervals
@@ -126,17 +124,31 @@ defmodule MusicPrims do
     next_nth(note, @notes)
   end
 
+  @doc """
+  Rotate a list of integers by the given amount.
+  E.G. rotate([0, 2, 4, 5, 7, 9, 11], 1) will return [2, 4, 5, 7, 9, 11, 12]
+  """
   @spec rotate([integer], integer) :: [integer]
   def rotate(intervals, by) do
     Enum.drop(intervals, by) ++ (Enum.take(intervals, by) |> Enum.map(&(&1 + 12)))
   end
 
+  @doc """
+  Rotate a list of integers by the given amount and return the result with the first element set to 0.
+  E.G. rotate_zero([0, 2, 4, 5, 7, 9, 11], 1) will return [0, 2, 4, 5, 7, 9, 11]
+  """
   @spec rotate_zero([integer], integer) :: [integer]
   def rotate_zero(intervals, by) do
     [f|r] = rotate(intervals, by)
     [0|Enum.map(r, &(&1 - f))]
   end
 
+  @doc """
+  Rotate a list of notes by the given amount. Thus, the degree of
+  rotation is the mode
+  E.G. rotate_notes(major_scale(:C, 4), 5) will return scale of A minor
+  E.G. rotate_notes(major_scale(:C, 4), @modes[:dorian]) will return dorian scale of C
+  """
   @spec rotate_notes([Note.t()], integer) :: [Note.t()]
   def rotate_notes(notes, n) do
     {l, r} = Enum.split(notes, n)
@@ -198,14 +210,13 @@ defmodule MusicPrims do
     chromatic_scale(Note.new({key, octave}))
   end
 
-  # def scale_interval(scale, interval) do
-  #   {note, _} = Enum.at(scale, interval)
-  #   note
-  # end
-
-  @spec scale_interval(atom) :: integer
+  @doc """
+  Get the scale intervals for the given mode.
+  """
+  @spec scale_interval(atom) :: [integer]
   def scale_interval(mode) do
-    @scale_intervals[mode]
+    mode_num = @modes[mode]
+    @major_intervals |> rotate_zero(mode_num)
   end
 
   @spec note_map(atom) :: integer
@@ -215,14 +226,18 @@ defmodule MusicPrims do
 
   @doc """
   return the key for which notes for the given key and mode are the same.
-  E.G. for :A, :minor, we would return :C since the notes of A-minor are the
+  E.G. for :A, :minor, :major, we would return :C since the notes of A-minor are the
   same as the notes in C major.
+       for :D :dorian, :major we would return :C
+       for :D :dorian, :minor we would return :A
   """
-  @spec major_key(atom, atom) :: atom
-  def major_key(key, mode) do
-    index = note_map(key) - scale_interval(mode)
-    @notes_by_midi[if index >= 24 do index else index + 12 end]
+  @spec equivalent_key(atom, atom, atom) :: atom
+  def equivalent_key(key, key_mode, equivlent_mode) do
+    index = @modes[equivlent_mode] - @modes[key_mode]
+    {rkey, _} = Enum.at(modal_scale(key, 0, key_mode), index).note
+    rkey
   end
+
 
   @spec raw_scale(scale, [integer]) :: scale
   def raw_scale(chromatic_scale, intervals) do
@@ -257,6 +272,9 @@ defmodule MusicPrims do
     end
    end
 
+  @doc """
+  Map a note or key to its flat equivalent if it is a sharp key.
+  """
   @spec map_by_sharp_key(Note.t() | key, atom) :: Note.t() | key
   def map_by_sharp_key(value, context \\ :normal)
 
@@ -274,6 +292,9 @@ defmodule MusicPrims do
     if is_tuple(nk) do Note.new({k, elem(nk, 1)}) else k end
   end
 
+  @doc """
+  Map a note or key to its sharp equivalent if it is a flat key.
+  """
   @spec map_by_flat_key(Note.t() | key) :: Note.t() | key
   def map_by_flat_key(%Note{note: {key, octave}} = note) do
     mapped_key = map_by_flat_key(key)
@@ -289,6 +310,11 @@ defmodule MusicPrims do
     end
   end
 
+  @doc """
+  Adjust the octave of a scale by the given octave amount.
+  E.G. adjust_octave(scale, 1) will increase the octave of each note in the scale by 12.
+       adjust_octave(scale, -1) will decrease the octave of each note in the scale by 12.
+  """
   @spec adjust_octave(scale, integer) :: scale
   def adjust_octave(scale, octave) when octave == 0 do scale end
   def adjust_octave(scale = [%Note{} | _], octave) do
@@ -321,9 +347,12 @@ defmodule MusicPrims do
     |> rotate_zero(@modes[:minor]) , octave)
   end
 
-  @spec dorian_scale(atom, integer) :: note_sequence
-  def dorian_scale(key, octave \\ 0) do
-    build_note_seq(key, @major_intervals |> rotate_zero(@modes[:dorian]) , octave)
+  @doc """
+  Build a scale from the given key and mode.
+  """
+  @spec modal_scale(atom, integer, atom) :: note_sequence
+  def modal_scale(key, octave, mode) do
+    build_note_seq(key, @major_intervals |> rotate_zero(@modes[mode]) , octave)
   end
 
   @spec blues_scale(atom, integer) :: note_sequence

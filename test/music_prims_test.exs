@@ -50,7 +50,7 @@ defmodule MusicPrimsTest do
     end
     test "last 6 notes of :C :major same as first 6 notes of :D :dorian" do
       assert normalize(major_scale(:C, 1) |> Enum.drop(1)) ==
-        normalize(dorian_scale(:D, 1) |> Enum.take(6))
+        normalize(modal_scale(:D, 1, :dorian) |> Enum.take(6))
     end
     test "first 3 notes of pentatonic same as first 3 notes of blues" do
       assert normalize(pent_scale(:A) |> Enum.take(3)) ==
@@ -125,6 +125,53 @@ defmodule MusicPrimsTest do
       ]
     end
 
+    test "scale_interval returns correct intervals for different modes" do
+      # Major mode (0) should return standard major scale intervals
+      assert scale_interval(:major) == [0, 2, 4, 5, 7, 9, 11]
+
+      # Dorian mode (1) should return dorian scale intervals
+      assert scale_interval(:dorian) == [0, 2, 3, 5, 7, 9, 10]
+
+      # Minor mode (5) should return natural minor scale intervals
+      assert scale_interval(:minor) == [0, 2, 3, 5, 7, 8, 10]
+
+      # Locrian mode (6) should return locrian scale intervals
+      assert scale_interval(:locrian) == [0, 1, 3, 5, 6, 8, 10]
+    end
+
+    test "equivalent_key finds correct equivalent keys between modes" do
+      # A minor is equivalent to C major
+      assert equivalent_key(:A, :minor, :major) == :C
+
+      # D dorian is equivalent to C major
+      assert equivalent_key(:D, :dorian, :major) == :C
+
+      # D dorian is equivalent to A minor
+      assert equivalent_key(:D, :dorian, :minor) == :A
+
+      # G mixolydian is equivalent to C major
+      assert equivalent_key(:G, :mixolodian, :major) == :C
+
+      # E phrygian is equivalent to C major
+      assert equivalent_key(:E, :phrygian, :major) == :C
+    end
+
+    test "modal_scale generates correct scales for different modes" do
+      # C major scale
+      assert normalize(modal_scale(:C, 0, :major)) == [C: 0, D: 0, E: 0, F: 0, G: 0, A: 0, B: 0]
+
+      # D dorian scale (should be same notes as C major)
+      assert normalize(modal_scale(:D, 0, :dorian)) == [D: 0, E: 0, F: 0, G: 0, A: 0, B: 0, C: 1]
+
+      # A minor scale (should be same notes as C major)
+      assert normalize(modal_scale(:A, 0, :minor)) == [A: 0, B: 0, C: 1, D: 1, E: 1, F: 1, G: 1]
+
+      # G mixolydian scale (should be same notes as C major)
+      assert normalize(modal_scale(:G, 0, :mixolodian)) == [G: 0, A: 0, B: 0, C: 1, D: 1, E: 1, F: 1]
+
+      # E phrygian scale (should be same notes as C major)
+      assert normalize(modal_scale(:E, 0, :phrygian)) == [E: 0, F: 0, G: 0, A: 0, B: 0, C: 1, D: 1]
+    end
   end
 
 end
