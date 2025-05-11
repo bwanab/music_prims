@@ -57,9 +57,9 @@ defmodule Arpeggio do
     length = arpeggio.chord.notes |> length
     pattern = case arpeggio.pattern do
       :up -> Enum.to_list(1..length)
-      :down -> Enum.to_list(length..1)
-      :up_down -> Enum.to_list(1..length) ++ Enum.to_list(length-1..2)
-      :down_up -> Enum.to_list(length..1) ++ Enum.to_list(2..length-1)
+      :down -> Enum.to_list(length..1//-1)
+      :up_down -> Enum.to_list(1..length) ++ Enum.to_list(length-1..2//-1)
+      :down_up -> Enum.to_list(length..1//-1) ++ Enum.to_list(2..length-1//-1)
     end
     to_notes(arpeggio, pattern)
   end
