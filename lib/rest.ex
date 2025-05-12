@@ -1,6 +1,6 @@
 defmodule Rest do
   @type t :: %__MODULE__{
-      duration: float(),
+      duration: integer(),
   }
 
   defstruct [:duration]
@@ -19,6 +19,10 @@ defmodule Rest do
     end
 
     def type(_) do :rest end
+
+    def show(rest, _opts \\ []) do
+      "r#{rest.duration}"
+    end
 
   end
 end

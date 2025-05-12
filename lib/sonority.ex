@@ -18,12 +18,14 @@ defprotocol Sonority do
 
   Dealing with these will be at a later iteration.
 """
-  @spec duration(t()) :: float()
+  @spec duration(t()) :: integer()
   def duration(s)
 
   @spec type(t()) :: atom()
   def type(s)
 
+  @spec show(t(), Keyword.t()) :: String.t()
+  def show(s, opts \\ [])
 
   @doc """
   Gets the type of a Sonority.

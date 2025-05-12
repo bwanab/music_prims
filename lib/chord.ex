@@ -11,7 +11,7 @@ defmodule Chord do
     root: MusicPrims.key() | nil,
     quality: atom() | nil,
     notes: [Note.t()] | nil,
-    duration: float(),
+    duration: integer(),
     bass_note: Note.t() | nil,
     additions: [Note.t()] | nil,
     omissions: [integer()] | nil,
@@ -309,6 +309,16 @@ defmodule Chord do
   defimpl Sonority do
     def duration(chord), do: chord.duration
     def type(_), do: :chord
+
+    @doc """
+    Convert a chord to a Lilypond string representation.
+    """
+    @spec show(Chord.t(), keyword()) :: String.t()
+    def show(chord, _opts \\ []) do
+      s = Enum.map(Chord.to_notes(chord), fn n -> Sonority.show(n, no_dur: true) end) |> Enum.join(" ")
+      "< #{s} >#{chord.duration}"
+    end
+
   end
 
   import Scale

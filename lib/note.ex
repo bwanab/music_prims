@@ -5,7 +5,7 @@ defmodule Note do
 
   @type t :: %__MODULE__{
     note: {atom(), integer()},
-    duration: float(),
+    duration: integer(),
     velocity: integer()
   }
 
@@ -47,7 +47,7 @@ defmodule Note do
     {duration, velocity} = case opts do
       [] -> {nil, nil}  # No options provided, both should be nil
       [duration: nil] -> {nil, 100}  # Only duration provided as nil
-      [velocity: nil] -> {1.0, nil}  # Only velocity provided as nil
+      [velocity: nil] -> {4, nil}  # Only velocity provided as nil
       [duration: nil, velocity: nil] -> {nil, nil}  # Both provided as nil
       [velocity: nil, duration: nil] -> {nil, nil}  # Both provided as nil (different order)
       _ ->
@@ -62,7 +62,7 @@ defmodule Note do
   Build a note sequence from a key and intervals.
   """
   @spec build_note_seq(atom, [integer], integer) :: scale
-  def build_note_seq(key, intervals, octave \\ 0) do
+  def build_note_seq(key, intervals, octave \\ 4) do
     skey = map_by_flat_key(key)
     raw_seq = Note.chromatic_scale(Note.new({skey, octave}))
     |> Scale.raw_scale(intervals)
@@ -299,31 +299,6 @@ defmodule Note do
     chromatic_scale(new({key, octave}))
   end
 
-  @doc """
-  Convert a note to a string representation.
-  """
-  @spec to_string(t()) :: String.t()
-  def to_string(%__MODULE__{note: {key, octave}, duration: duration}) do
-    key_str = case key do
-      :C! -> "C#"
-      :D! -> "D#"
-      :F! -> "F#"
-      :G! -> "G#"
-      :A! -> "A#"
-      _ -> Atom.to_string(key)
-    end
-
-    base = "#{key_str}#{octave}"
-    case duration do
-      nil -> base
-      1.0 -> base
-      2.0 -> "#{base}*2/4"
-      4.0 -> "#{base}*4/4"
-      0.5 -> "#{base}*1/8"
-      0.25 -> "#{base}*1/16"
-      d when is_number(d) -> "#{base}*#{d}/4"
-    end
-  end
 
   @doc """
   Check if two notes are enharmonically equal.
@@ -351,7 +326,7 @@ defmodule Note do
   def note_to_midi(%Note{note: {key, octave}, duration: duration, velocity: velocity}) do
     %{
       note_number: @midi_notes_map[key] + (octave * 12),
-      duration: duration,
+      duration: 1 / duration,
       velocity: velocity || 100
     }
   end
@@ -456,7 +431,41 @@ defmodule Note do
 
   # Implement the Sonority protocol
   defimpl Sonority do
-    def duration(note), do: note.duration
+    def duration(note), do: 1 / note.duration
     def type(_), do: :note
+    @doc """
+    Convert a note to a Lilypond string representation.
+    """
+    # @spec to_string(t()) :: String.t()
+    #def to_string(%__MODULE__{note: {key, octave}, duration: duration}) do
+    def show(%Note{note: {key, octave}, duration: duration}, opts \\ []) do
+      no_dur = if Keyword.has_key?(opts, :no_dur), do: Keyword.get(opts, :no_dur), else: false
+
+      b = String.downcase(Atom.to_string(key))
+      key_str = case String.length(b) do
+        1 -> b
+        2 -> case String.at(b, 1) do
+          "!" -> "#{String.at(b, 0)}is"
+          _ -> "#{String.at(b, 0)}es"
+        end
+      end
+
+      octave_str = case octave do
+        6 -> "''''"
+        5 -> "'''"
+        4 -> "''"
+        3 -> "'"
+        2 -> ""
+        1 -> ","
+        0 -> ",,"
+        _ -> "''"
+      end
+
+      if no_dur do
+        "#{key_str}#{octave_str}"
+      else
+        "#{key_str}#{octave_str}#{duration}"
+      end
+    end
   end
 end

@@ -24,7 +24,7 @@ defmodule Arpeggio do
   @type t :: %__MODULE__{
     chord: Chord.t(),
     pattern: pattern(),
-    duration: float()
+    duration: integer()
   }
 
   defstruct [:chord, :pattern, :duration]
@@ -65,19 +65,24 @@ defmodule Arpeggio do
   end
 
   defp to_notes(arpeggio, pattern) do
-    note_durations = arpeggio.duration / length(pattern)
-    notes = Enum.map(Chord.to_notes(arpeggio.chord), fn n -> Note.new(n.note, duration: note_durations) end)
+    notes = Chord.to_notes(arpeggio.chord) |> Enum.map(fn n -> Note.new(n.note, duration: arpeggio.duration) end)
     Enum.map(pattern, fn p -> Enum.at(notes, p - 1) end)
   end
 
   def repeat(arpeggio, times) do
     notes = Enum.reduce(1..times, [], fn _n,l -> l ++ Arpeggio.to_notes(arpeggio) end)
-    Arpeggio.new(Chord.new(notes, 1.0), arpeggio.pattern, arpeggio.duration * times)
+    Arpeggio.new(Chord.new(notes, arpeggio.duration), Enum.to_list(1..length(notes)), arpeggio.duration)
   end
 
   defimpl Sonority do
     def duration(arpeggio), do: arpeggio.duration
     def type(_), do: :arpeggio
+
+    @spec show(Arpeggio.t(), keyword()) :: String.t()
+    def show(arpeggio, _opts \\ []) do
+      Enum.map(Arpeggio.to_notes(arpeggio), fn n -> Sonority.show(n) end) |> Enum.join(" ")
+    end
+
   end
 
 
