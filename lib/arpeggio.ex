@@ -70,8 +70,7 @@ defmodule Arpeggio do
   end
 
   def repeat(arpeggio, times) do
-    notes = Enum.reduce(1..times, [], fn _n,l -> l ++ Arpeggio.to_notes(arpeggio) end)
-    Arpeggio.new(Chord.new(notes, arpeggio.duration), Enum.to_list(1..length(notes)), arpeggio.duration)
+    Enum.reduce(1..times, [], fn _n,l -> l ++ Arpeggio.to_notes(arpeggio) end)
   end
 
   defimpl Sonority do

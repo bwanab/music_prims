@@ -74,7 +74,7 @@ defmodule Chord do
   end
 
   # Constructor from notes
-  @spec new([Note.t()], float()) :: Sonority.t()
+  @spec new([Note.t()], integer()) :: Sonority.t()
   def new(notes, duration) when is_list(notes) do
     {{inferred_root, inferred_quality}, inversion} = ChordTheory.infer_chord_type(notes)
     %__MODULE__{
@@ -116,7 +116,7 @@ defmodule Chord do
   ## Returns
     * A new Chord struct
   """
-  @spec new_from_root(atom(), atom(), integer(), float(), integer()) :: Sonority.t()
+  @spec new_from_root(atom(), atom(), integer(), integer(), integer()) :: Sonority.t()
   def new_from_root(key, quality, octave \\ 0, duration \\ 1.0, inversion \\ 0) do
     notes = ChordTheory.get_standard_notes(key, quality, octave)
 
@@ -302,7 +302,7 @@ defmodule Chord do
 
     # Handle bass note if specified (would need to ensure it's at the bottom)
     # For simplicity, we're not implementing this logic fully
-    notes_with_additions
+    Enum.map(notes_with_additions, fn n -> Note.new(n.note, duration: chord.duration, velocity: n.velocity) end)
   end
 
   # Implement the Sonority protocol

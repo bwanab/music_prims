@@ -13,6 +13,10 @@ defmodule Rest do
     }
   end
 
+  def to_midi(rest) do
+    4.0 / rest.duration
+  end
+
   defimpl Sonority do
     def duration(rest) do
       rest.duration

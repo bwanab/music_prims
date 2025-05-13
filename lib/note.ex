@@ -324,9 +324,13 @@ defmodule Note do
   """
   @spec note_to_midi(t) :: %{note_number: integer, duration: number | nil, velocity: integer}
   def note_to_midi(%Note{note: {key, octave}, duration: duration, velocity: velocity}) do
+    midi_duration = case duration do
+      0 -> 0.0
+      _ -> 4.0 / duration
+    end
     %{
       note_number: @midi_notes_map[key] + (octave * 12),
-      duration: 1 / duration,
+      duration: midi_duration,
       velocity: velocity || 100
     }
   end
