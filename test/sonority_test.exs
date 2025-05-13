@@ -27,7 +27,7 @@ defmodule SonorityTest do
     test "mapping a list of sonorities returns correct types" do
       note = Note.new({:C, 4})
       chord1 = Chord.new([note], 1)
-      chord2 = Chord.new({{:C, 4}, :major}, 1)
+      chord2 = Chord.new(:C, :major, 4, 1)
       rest = Rest.new(1)
 
       sonorities = [note, chord1, chord2, rest]
@@ -41,7 +41,7 @@ defmodule SonorityTest do
       [
         Note.new({:C, 4}, duration: 1),
         Rest.new(1),
-        Chord.new_from_root(:A, :major, 4, 1),
+        Chord.new(:A, :major, 4, 1),
         Note.new({:E, 4}, duration: 1),
         Note.new({:F, 4}, duration: 1)
       ]

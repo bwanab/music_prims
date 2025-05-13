@@ -49,29 +49,29 @@ defmodule Chord do
     * A new Chord struct
   """
 
-  # # Constructor that takes the result of infer_chord_type
-  @spec new({{atom(), atom()}, integer()}, float()) :: Sonority.t()
-  def new({{key, quality}, inversion}, duration) when is_atom(quality) and is_integer(inversion) do
-    # Extract the rootless key and octave from the key
-    {root_key, octave} = case key do
-      {k, o} when is_atom(k) and is_integer(o) -> {k, o}
-      k when is_atom(k) -> {k, 4}  # Default octave if not specified
-    end
+  # # # Constructor that takes the result of infer_chord_type
+  # @spec new({{atom(), atom()}, integer()}, float()) :: Sonority.t()
+  # def new({{key, quality}, inversion}, duration) when is_atom(quality) and is_integer(inversion) do
+  #   # Extract the rootless key and octave from the key
+  #   {root_key, octave} = case key do
+  #     {k, o} when is_atom(k) and is_integer(o) -> {k, o}
+  #     k when is_atom(k) -> {k, 4}  # Default octave if not specified
+  #   end
 
-    # Get standard notes for this chord type
-    notes = ChordTheory.get_standard_notes(root_key, quality, octave)
+  #   # Get standard notes for this chord type
+  #   notes = ChordTheory.get_standard_notes(root_key, quality, octave)
 
-    # Apply inversion if needed
-    inverted_notes = apply_inversion(notes, inversion)
+  #   # Apply inversion if needed
+  #   inverted_notes = apply_inversion(notes, inversion)
 
-    %__MODULE__{
-      notes: inverted_notes,
-      root: key,
-      quality: quality,
-      duration: duration,
-      inversion: inversion
-    }
-  end
+  #   %__MODULE__{
+  #     notes: inverted_notes,
+  #     root: key,
+  #     quality: quality,
+  #     duration: duration,
+  #     inversion: inversion
+  #   }
+  # end
 
   # Constructor from notes
   @spec new([Note.t()], integer()) :: Sonority.t()
@@ -87,23 +87,23 @@ defmodule Chord do
     }
   end
 
-  # Constructor from chord symbol with optional inversion
-  @spec new({{atom(), integer()}, atom()}, float(), integer()) :: Sonority.t()
-  def new(chord = {{key, _octave}, quality}, duration, inversion \\ 0) do
+  # # Constructor from chord symbol with optional inversion
+  # @spec new({{atom(), integer()}, atom()}, float(), integer()) :: Sonority.t()
+  # def new(chord = {{key, _octave}, quality}, duration, inversion \\ 0) do
 
-    notes = chord_to_notes(chord)
+  #   notes = chord_to_notes(chord)
 
-    # Apply inversion if needed
-    inverted_notes = apply_inversion(notes, inversion)
+  #   # Apply inversion if needed
+  #   inverted_notes = apply_inversion(notes, inversion)
 
-    %__MODULE__{
-      root: key,
-      quality: quality,
-      notes: inverted_notes,
-      duration: duration,
-      inversion: inversion
-    }
-  end
+  #   %__MODULE__{
+  #     root: key,
+  #     quality: quality,
+  #     notes: inverted_notes,
+  #     duration: duration,
+  #     inversion: inversion
+  #   }
+  # end
 
   @doc """
   Creates a chord from a root note, quality, and optional octave, duration and inversion.
@@ -118,8 +118,8 @@ defmodule Chord do
   ## Returns
     * A new Chord struct
   """
-  @spec new_from_root(atom(), atom(), integer(), integer(), integer()) :: Sonority.t()
-  def new_from_root(key, quality, octave \\ 0, duration \\ 1.0, inversion \\ 0) do
+  @spec new(atom(), atom(), integer(), integer(), integer()) :: Sonority.t()
+  def new(key, quality, octave \\ 3, duration \\ 4, inversion \\ 0) do
     notes = ChordTheory.get_standard_notes(key, quality, octave)
 
     # Apply inversion if needed
@@ -133,6 +133,7 @@ defmodule Chord do
       inversion: inversion
     }
   end
+
 
   @doc """
   Specifies the bass note for the chord, creating a slash chord.

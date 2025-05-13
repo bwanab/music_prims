@@ -49,7 +49,7 @@ defmodule ChordTest do
 
   describe "Chord.new/2 from chord symbol" do
     test "creates a chord from a chord symbol" do
-      chord = Chord.new({{:C, 4}, :major}, 4)
+      chord = Chord.new(:C, :major, 4, 4)
       assert chord.duration == 4
       assert chord.root == :C
       assert chord.quality == :major
@@ -58,7 +58,7 @@ defmodule ChordTest do
     end
 
     test "creates a chord from a chord symbol with inversion" do
-      chord = Chord.new({{:C, 4}, :major}, 4, 1)
+      chord = Chord.new(:C, :major, 4, 4, 1)
       assert chord.duration == 4
       assert chord.root == :C
       assert chord.quality == :major
@@ -77,8 +77,8 @@ defmodule ChordTest do
         Note.new({:G, 4}),
         Note.new({:C, 5})
       ]
-      chord_info = ChordTheory.infer_chord_type(notes)
-      chord = Chord.new(chord_info, 4)
+      # chord_info = ChordTheory.infer_chord_type(notes)
+      chord = Chord.new(notes, 4)
 
       # Root is now a tuple with octave information
       assert elem(chord.root, 0) == :C
@@ -95,9 +95,9 @@ defmodule ChordTest do
     end
   end
 
-  describe "Chord.new_from_root/5" do
+  describe "Chord.new/5" do
     test "creates a chord with the specified root, quality, and octave" do
-      chord = Chord.new_from_root(:D, :minor, 3, 2)
+      chord = Chord.new(:D, :minor, 3, 2)
       assert chord.root == :D
       assert chord.quality == :minor
       assert chord.duration == 2
@@ -105,13 +105,13 @@ defmodule ChordTest do
     end
 
     test "applies first inversion when specified" do
-      chord = Chord.new_from_root(:D, :minor, 3, 2, 1)
+      chord = Chord.new(:D, :minor, 3, 2, 1)
       assert chord.inversion == 1
       assert length(chord.notes) == 3
     end
 
     test "applies second inversion when specified" do
-      chord = Chord.new_from_root(:D, :minor, 3, 2, 2)
+      chord = Chord.new(:D, :minor, 3, 2, 2)
       assert chord.inversion == 2
       assert length(chord.notes) == 3
     end
@@ -244,35 +244,35 @@ defmodule ChordTest do
 
   describe "Sonority protocol" do
     test "type returns :chord" do
-      chord = Chord.new_from_root(:C, :major)
+      chord = Chord.new(:C, :major)
       assert Sonority.type(chord) == :chord
     end
 
     test "duration returns the chord's duration" do
-      chord = Chord.new_from_root(:C, :major, 4, 2)
+      chord = Chord.new(:C, :major, 4, 2)
       assert Sonority.duration(chord) == 2
     end
 
     test "show returns Lilypond representation" do
-      chord = Chord.new_from_root(:C, :major, 4, 4)
+      chord = Chord.new(:C, :major, 4, 4)
       assert Sonority.show(chord) == "< c'' e'' g'' >4"
     end
   end
 
   test "with_bass adds a bass note to the chord" do
-    chord = Chord.new_from_root(:C, :major)
+    chord = Chord.new(:C, :major)
     |> Chord.with_bass({:G, 3})
     assert chord.bass_note == {:G, 3}
   end
 
   test "with_additions adds notes to the chord" do
-    chord = Chord.new_from_root(:C, :major)
+    chord = Chord.new(:C, :major)
     |> Chord.with_additions([Note.new({:D, 4})])
     assert length(Chord.to_notes(chord)) == 4
   end
 
   test "with_omissions removes notes from the chord" do
-    chord = Chord.new_from_root(:C, :major, 0, 2.5)
+    chord = Chord.new(:C, :major, 0, 2)
     |> Chord.with_omissions([5])
     assert length(Chord.to_notes(chord)) == 2
   end
