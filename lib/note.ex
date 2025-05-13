@@ -1,3 +1,4 @@
+
 defmodule Note do
   @moduledoc """
   Functions for working with musical notes.
@@ -6,12 +7,13 @@ defmodule Note do
   @type t :: %__MODULE__{
     note: {atom(), integer()},
     duration: integer(),
-    velocity: integer()
+    velocity: integer(),
+    dotted: boolean
   }
 
   @type scale :: [t()]
 
-  defstruct [:note, :duration, :velocity]
+  defstruct [:note, :duration, :velocity, :dotted]
 
   # Notes and MIDI mapping
   @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
@@ -37,25 +39,23 @@ defmodule Note do
   def new(note_or_tuple, opts \\ [])
 
   def new(%__MODULE__{} = note, opts) do
-    duration = if Keyword.has_key?(opts, :duration), do: Keyword.get(opts, :duration), else: note.duration
-    velocity = if Keyword.has_key?(opts, :velocity), do: Keyword.get(opts, :velocity), else: note.velocity
-    %__MODULE__{note: note.note, duration: duration, velocity: velocity}
+    duration = Keyword.get(opts, :duration, 4)
+    velocity = Keyword.get(opts, :velocity, 100)
+    dotted = Keyword.get(opts, :dotted, false)
+    %__MODULE__{note: note.note, duration: duration, velocity: velocity, dotted: dotted}
   end
 
   def new({key, octave}, opts) do
     # Handle nil values and defaults
-    {duration, velocity} = case opts do
-      [] -> {nil, nil}  # No options provided, both should be nil
-      [duration: nil] -> {nil, 100}  # Only duration provided as nil
-      [velocity: nil] -> {4, nil}  # Only velocity provided as nil
-      [duration: nil, velocity: nil] -> {nil, nil}  # Both provided as nil
-      [velocity: nil, duration: nil] -> {nil, nil}  # Both provided as nil (different order)
+    {duration, velocity, dotted} = case opts do
+      [] -> {4, 100, false}  # No options provided, both should be nil
       _ ->
-        duration = if Keyword.has_key?(opts, :duration), do: Keyword.get(opts, :duration), else: 1.0
-        velocity = if Keyword.has_key?(opts, :velocity), do: Keyword.get(opts, :velocity), else: 100
-        {duration, velocity}
+        duration = Keyword.get(opts, :duration, 4)
+        velocity = Keyword.get(opts, :velocity, 100)
+        dotted = Keyword.get(opts, :dotted, false)
+        {duration, velocity, dotted}
     end
-    %__MODULE__{note: {key, octave}, duration: duration, velocity: velocity}
+    %__MODULE__{note: {key, octave}, duration: duration, velocity: velocity, dotted: dotted}
   end
 
   @doc """
@@ -323,11 +323,13 @@ defmodule Note do
   Convert a note to its MIDI note number, duration, and velocity.
   """
   @spec note_to_midi(t) :: %{note_number: integer, duration: number | nil, velocity: integer}
-  def note_to_midi(%Note{note: {key, octave}, duration: duration, velocity: velocity}) do
+  def note_to_midi(%Note{note: {key, octave}, duration: duration, velocity: velocity, dotted: dotted}) do
     midi_duration = case duration do
       0 -> 0.0
+      nil -> 1.0
       _ -> 4.0 / duration
     end
+    midi_duration = if dotted, do: midi_duration * 1.5, else: midi_duration
     %{
       note_number: @midi_notes_map[key] + (octave * 12),
       duration: midi_duration,
@@ -435,14 +437,14 @@ defmodule Note do
 
   # Implement the Sonority protocol
   defimpl Sonority do
-    def duration(note), do: 1 / note.duration
+    def duration(note), do: note.duration
     def type(_), do: :note
     @doc """
     Convert a note to a Lilypond string representation.
     """
     # @spec to_string(t()) :: String.t()
     #def to_string(%__MODULE__{note: {key, octave}, duration: duration}) do
-    def show(%Note{note: {key, octave}, duration: duration}, opts \\ []) do
+    def show(%Note{note: {key, octave}, duration: duration, dotted: dotted}, opts \\ []) do
       no_dur = if Keyword.has_key?(opts, :no_dur), do: Keyword.get(opts, :no_dur), else: false
 
       b = String.downcase(Atom.to_string(key))
@@ -453,6 +455,8 @@ defmodule Note do
           _ -> "#{String.at(b, 0)}es"
         end
       end
+
+      dot_str = if dotted, do:  ".", else: ""
 
       octave_str = case octave do
         6 -> "''''"
@@ -468,7 +472,7 @@ defmodule Note do
       if no_dur do
         "#{key_str}#{octave_str}"
       else
-        "#{key_str}#{octave_str}#{duration}"
+        "#{key_str}#{octave_str}#{duration}#{dot_str}"
       end
     end
   end

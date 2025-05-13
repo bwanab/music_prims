@@ -9,9 +9,9 @@ defmodule ChordTest do
         Note.new({:E, 4}),
         Note.new({:G, 4})
       ]
-      chord = Chord.new(notes, 1.0)
+      chord = Chord.new(notes, 4)
       assert chord.notes == notes
-      assert chord.duration == 1.0
+      assert chord.duration == 4
       # Root is now a tuple with octave information
       assert elem(chord.root, 0) == :C
       assert chord.quality == :major
@@ -25,7 +25,7 @@ defmodule ChordTest do
         Note.new({:G, 4}),
         Note.new({:C, 5})
       ]
-      chord = Chord.new(notes, 1.0)
+      chord = Chord.new(notes, 4)
       # Root is now a tuple with octave information
       assert elem(chord.root, 0) == :C
       assert chord.quality == :major
@@ -38,7 +38,7 @@ defmodule ChordTest do
         Note.new({:C, 5}),
         Note.new({:E, 5})
       ]
-      chord = Chord.new(notes, 1.0)
+      chord = Chord.new(notes, 4)
       # Root is now a tuple with octave information
       assert elem(chord.root, 0) == :C
       assert chord.quality == :major
@@ -49,8 +49,8 @@ defmodule ChordTest do
 
   describe "Chord.new/2 from chord symbol" do
     test "creates a chord from a chord symbol" do
-      chord = Chord.new({{:C, 4}, :major}, 1.0)
-      assert chord.duration == 1.0
+      chord = Chord.new({{:C, 4}, :major}, 4)
+      assert chord.duration == 4
       assert chord.root == :C
       assert chord.quality == :major
       assert length(chord.notes) == 3
@@ -58,8 +58,8 @@ defmodule ChordTest do
     end
 
     test "creates a chord from a chord symbol with inversion" do
-      chord = Chord.new({{:C, 4}, :major}, 1.0, 1)
-      assert chord.duration == 1.0
+      chord = Chord.new({{:C, 4}, :major}, 4, 1)
+      assert chord.duration == 4
       assert chord.root == :C
       assert chord.quality == :major
       assert chord.inversion == 1
@@ -78,14 +78,14 @@ defmodule ChordTest do
         Note.new({:C, 5})
       ]
       chord_info = ChordTheory.infer_chord_type(notes)
-      chord = Chord.new(chord_info, 1.0)
+      chord = Chord.new(chord_info, 4)
 
       # Root is now a tuple with octave information
       assert elem(chord.root, 0) == :C
       assert chord.quality == :major
       # The actual inversion calculation in the implementation
       assert chord.inversion == 2
-      assert chord.duration == 1.0
+      assert chord.duration == 4
 
       # Check the notes in the chord - they should be in root position now
       note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
@@ -97,21 +97,21 @@ defmodule ChordTest do
 
   describe "Chord.new_from_root/5" do
     test "creates a chord with the specified root, quality, and octave" do
-      chord = Chord.new_from_root(:D, :minor, 3, 2.0)
+      chord = Chord.new_from_root(:D, :minor, 3, 2)
       assert chord.root == :D
       assert chord.quality == :minor
-      assert chord.duration == 2.0
+      assert chord.duration == 2
       assert length(chord.notes) == 3
     end
 
     test "applies first inversion when specified" do
-      chord = Chord.new_from_root(:D, :minor, 3, 2.0, 1)
+      chord = Chord.new_from_root(:D, :minor, 3, 2, 1)
       assert chord.inversion == 1
       assert length(chord.notes) == 3
     end
 
     test "applies second inversion when specified" do
-      chord = Chord.new_from_root(:D, :minor, 3, 2.0, 2)
+      chord = Chord.new_from_root(:D, :minor, 3, 2, 2)
       assert chord.inversion == 2
       assert length(chord.notes) == 3
     end
@@ -119,10 +119,10 @@ defmodule ChordTest do
 
   describe "Chord.from_roman_numeral/6" do
     test "creates a major I chord in C" do
-      chord = Chord.from_roman_numeral(:I, :C, 4, 4.0)
+      chord = Chord.from_roman_numeral(:I, :C, 4, 1)
       assert chord.root == :C
       assert chord.quality == :major
-      assert chord.duration == 4.0
+      assert chord.duration == 1
       assert chord.inversion == 0
 
       # Check that notes match C major
@@ -131,10 +131,10 @@ defmodule ChordTest do
     end
 
     test "creates a minor ii chord in C" do
-      chord = Chord.from_roman_numeral(:ii, :C, 4, 2.0)
+      chord = Chord.from_roman_numeral(:ii, :C, 4, 2)
       assert chord.root == :D
       assert chord.quality == :minor
-      assert chord.duration == 2.0
+      assert chord.duration == 2
       assert chord.inversion == 0
 
       # Check that notes match D minor
@@ -143,10 +143,10 @@ defmodule ChordTest do
     end
 
     test "creates a dominant V7 chord in G" do
-      chord = Chord.from_roman_numeral(:V7, :G, 3, 1.0)
+      chord = Chord.from_roman_numeral(:V7, :G, 3, 4)
       assert chord.root == :D
       assert chord.quality == :dominant_seventh
-      assert chord.duration == 1.0
+      assert chord.duration == 4
       assert chord.inversion == 0
 
       # Check that notes match D7
@@ -155,13 +155,13 @@ defmodule ChordTest do
     end
 
     test "creates a major III chord in C minor" do
-      chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      chord = Chord.from_roman_numeral(:III, :C, 4, 4, :minor)
 
       # The chord is stored as a D# major chord (using D! in our system)
       # but the notes themselves are represented with their enharmonic Eb major equivalents
       assert chord.root == :D!
       assert chord.quality == :major
-      assert chord.duration == 1.0
+      assert chord.duration == 4
       assert chord.inversion == 0
 
       # The actual notes are in Eb major (enharmonic equivalent)
@@ -170,10 +170,10 @@ defmodule ChordTest do
     end
 
     test "creates a minor i chord in A minor" do
-      chord = Chord.from_roman_numeral(:i, :A, 4, 2.0, :minor)
+      chord = Chord.from_roman_numeral(:i, :A, 4, 2, :minor)
       assert chord.root == :A
       assert chord.quality == :minor
-      assert chord.duration == 2.0
+      assert chord.duration == 2
       assert chord.inversion == 0
 
       # Check that notes match A minor
@@ -183,7 +183,7 @@ defmodule ChordTest do
 
     test "creates a chord with specified inversion" do
       # First inversion I chord in C
-      chord = Chord.from_roman_numeral(:I, :C, 4, 1.0, :major, 1)
+      chord = Chord.from_roman_numeral(:I, :C, 4, 4, :major, 1)
       assert chord.root == :C
       assert chord.quality == :major
       assert chord.inversion == 1
@@ -194,7 +194,7 @@ defmodule ChordTest do
       assert note_names == [{:E, 4}, {:G, 4}, {:C, 5}]
 
       # Second inversion V chord in G
-      chord = Chord.from_roman_numeral(:V, :G, 3, 1.0, :major, 2)
+      chord = Chord.from_roman_numeral(:V, :G, 3, 4, :major, 2)
       assert chord.root == :D
       assert chord.quality == :major
       assert chord.inversion == 2
@@ -209,7 +209,7 @@ defmodule ChordTest do
   describe "Chord.has_root_enharmonic_with?/2" do
     test "identifies enharmonic root equivalence with note keys" do
       # Create a chord with D# root (III in C minor)
-      chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      chord = Chord.from_roman_numeral(:III, :C, 4, 4, :minor)
 
       # Should recognize Eb as enharmonically equivalent to D#
       assert Chord.has_root_enharmonic_with?(chord, :Eb)
@@ -224,7 +224,7 @@ defmodule ChordTest do
 
     test "identifies enharmonic root equivalence with note tuples" do
       # Create a chord with F# root (V in B major)
-      chord = Chord.from_roman_numeral(:V, :B, 3, 1.0)
+      chord = Chord.from_roman_numeral(:V, :B, 3, 4)
 
       # Should recognize Gb as enharmonically equivalent to F#
       assert Chord.has_root_enharmonic_with?(chord, {:Gb, 3})
@@ -248,9 +248,14 @@ defmodule ChordTest do
       assert Sonority.type(chord) == :chord
     end
 
-    test "duration returns the chord duration" do
-      chord = Chord.new_from_root(:C, :major, 0, 2.5)
-      assert Sonority.duration(chord) == 2.5
+    test "duration returns the chord's duration" do
+      chord = Chord.new_from_root(:C, :major, 4, 2)
+      assert Sonority.duration(chord) == 2
+    end
+
+    test "show returns Lilypond representation" do
+      chord = Chord.new_from_root(:C, :major, 4, 4)
+      assert Sonority.show(chord) == "< c'' e'' g'' >4"
     end
   end
 

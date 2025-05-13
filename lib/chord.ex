@@ -49,7 +49,7 @@ defmodule Chord do
     * A new Chord struct
   """
 
-  # Constructor that takes the result of infer_chord_type
+  # # Constructor that takes the result of infer_chord_type
   @spec new({{atom(), atom()}, integer()}, float()) :: Sonority.t()
   def new({{key, quality}, inversion}, duration) when is_atom(quality) and is_integer(inversion) do
     # Extract the rootless key and octave from the key
@@ -76,6 +76,7 @@ defmodule Chord do
   # Constructor from notes
   @spec new([Note.t()], integer()) :: Sonority.t()
   def new(notes, duration) when is_list(notes) do
+    notes = Enum.map(notes, fn n -> Note.new(n.note, duration: duration, velocity: n.velocity) end)
     {{inferred_root, inferred_quality}, inversion} = ChordTheory.infer_chord_type(notes)
     %__MODULE__{
       notes: notes,
@@ -89,6 +90,7 @@ defmodule Chord do
   # Constructor from chord symbol with optional inversion
   @spec new({{atom(), integer()}, atom()}, float(), integer()) :: Sonority.t()
   def new(chord = {{key, _octave}, quality}, duration, inversion \\ 0) do
+
     notes = chord_to_notes(chord)
 
     # Apply inversion if needed
