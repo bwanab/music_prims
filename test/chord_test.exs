@@ -255,7 +255,7 @@ defmodule ChordTest do
 
     test "show returns Lilypond representation" do
       chord = Chord.new(:C, :major, 4, 4)
-      assert Sonority.show(chord) == "< c'' e'' g'' >4"
+      assert Sonority.show(chord) == "< c' e' g' >4"
     end
   end
 
@@ -301,9 +301,9 @@ defmodule ChordTest do
   describe "Chord.infer_chord_type/1" do
     test "identifies a major chord in root position" do
       notes = [
-        %Note{note: :C, octave: 4},
-        %Note{note: :E, octave: 4},
-        %Note{note: :G, octave: 4}
+        Note.new(:C, 4),
+        Note.new(:E, 4),
+        Note.new(:G, 4)
       ]
       {root_note, quality, inversion} = Chord.infer_chord_type(notes)
       assert root_note == :C
@@ -313,9 +313,9 @@ defmodule ChordTest do
 
     test "identifies a minor chord in root position" do
       notes = [
-        %Note{note: :A, octave: 3},
-        %Note{note: :C, octave: 4},
-        %Note{note: :E, octave: 4}
+        Note.new(:A, 3),
+        Note.new(:C, 4),
+        Note.new(:E, 4)
       ]
       {root_note, quality, inversion} = Chord.infer_chord_type(notes)
       assert root_note == :A
@@ -343,9 +343,9 @@ defmodule ChordTest do
 
     test "identifies a first inversion of a C major chord" do
       notes = [
-        %Note{note: :E, octave: 4},
-        %Note{note: :G, octave: 4},
-        %Note{note: :C, octave: 5}
+        Note.new(:E, 4),
+        Note.new(:G, 4),
+        Note.new(:C, 5)
       ]
       {root_note, quality, inversion} = Chord.infer_chord_type(notes)
       assert root_note == :C
@@ -356,9 +356,9 @@ defmodule ChordTest do
 
     test "identifies a second inversion of a C major chord" do
       notes = [
-        %Note{note: :G, octave: 4},
-        %Note{note: :C, octave: 5},
-        %Note{note: :E, octave: 5}
+        Note.new(:G, 4),
+        Note.new(:C, 5),
+        Note.new(:E, 5)
       ]
       {root_note, quality, inversion} = Chord.infer_chord_type(notes)
       assert root_note == :C

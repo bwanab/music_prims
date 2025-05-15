@@ -32,47 +32,47 @@ defmodule NoteTest do
   describe "Sonority.show/2" do
     test "formats a natural note correctly without duration" do
       note = Note.new(:C, 4)
-      assert Sonority.show(note) == "c''4"
+      assert Sonority.show(note) == "c'4"
     end
 
     test "formats a sharp note correctly without duration" do
       note = Note.new(:C!, 4)
-      assert Sonority.show(note) == "cis''4"
+      assert Sonority.show(note) == "cis'4"
     end
 
     test "formats a flat note correctly without duration" do
       note = Note.new(:Bb, 3)
-      assert Sonority.show(note) == "bes'4"
+      assert Sonority.show(note) == "bes4"
     end
 
     test "formats a quarter note (duration 4)" do
       note = Note.new(:C, 4, 4)
-      assert Sonority.show(note) == "c''4"
+      assert Sonority.show(note) == "c'4"
     end
 
     test "formats a half note (duration 2)" do
       note = Note.new(:D, 3, 2)
-      assert Sonority.show(note) == "d'2"
+      assert Sonority.show(note) == "d2"
     end
 
     test "formats an eighth note (duration 8)" do
       note = Note.new(:G, 3, 8)
-      assert Sonority.show(note) == "g'8"
+      assert Sonority.show(note) == "g8"
     end
 
     test "formats a sixteenth note (duration 16)" do
       note = Note.new(:A, 5, 16)
-      assert Sonority.show(note) == "a'''16"
+      assert Sonority.show(note) == "a''16"
     end
 
     test "formats a whole note (duration 1)" do
       note = Note.new(:E, 2, 1)
-      assert Sonority.show(note) == "e1"
+      assert Sonority.show(note) == "e,1"
     end
 
     test "formats a dotted quarter note" do
-      note = Note.new(:F, 4, 4, 100, true)
-      assert Sonority.show(note) == "f''4."
+      note = Note.new(:F, 4, -4, 100)
+      assert Sonority.show(note) == "f'4."
     end
   end
 

@@ -8,13 +8,12 @@ defmodule Note do
     note: atom(),
     octave: integer(),
     duration: integer(),
-    velocity: integer(),
-    dotted: boolean
+    velocity: integer()
   }
 
   @type scale :: [t()]
 
-  defstruct [:note, :octave, :duration, :velocity, :dotted]
+  defstruct [:note, :octave, :duration, :velocity]
 
   # Notes and MIDI mapping
   @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
@@ -42,23 +41,21 @@ defmodule Note do
   # def new(%__MODULE__{} = note, opts) do
   #   duration = Keyword.get(opts, :duration, 4)
   #   velocity = Keyword.get(opts, :velocity, 100)
-  #   dotted = Keyword.get(opts, :dotted, false)
-  #   %__MODULE__{note: note.note, duration: duration, velocity: velocity, dotted: dotted}
+  #   %__MODULE__{note: note.note, duration: duration, velocity: velocity}
   # end
 
-  def new(key, octave \\ 3, duration \\ 4, velocity \\ 100, dotted \\ false) do
-    %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, dotted: dotted}
+  def new(key, octave \\ 3, duration \\ 4, velocity \\ 100) do
+    %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity}
   end
 
   @spec copy(Note.t(), keyword()) :: Note.t()
-  def copy(%__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, dotted: dotted}, opts \\ []) do
+  def copy(%__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity}, opts \\ []) do
     # Handle nil values and defaults
     key = Keyword.get(opts, :key, key)
     octave = Keyword.get(opts, :octave, octave)
     duration = Keyword.get(opts, :duration, duration)
     velocity = Keyword.get(opts, :velocity, velocity)
-    dotted = Keyword.get(opts, :dotted, dotted)
-    Note.new(key, octave, duration, velocity, dotted)
+    Note.new(key, octave, duration, velocity)
   end
 
   # @doc """
@@ -307,13 +304,12 @@ defmodule Note do
   Convert a note to its MIDI note number, duration, and velocity.
   """
   @spec note_to_midi(t) :: %{note_number: integer, duration: number | nil, velocity: integer}
-  def note_to_midi(%Note{note: key, octave: octave, duration: duration, velocity: velocity, dotted: dotted}) do
+  def note_to_midi(%Note{note: key, octave: octave, duration: duration, velocity: velocity}) do
     midi_duration = case duration do
       0 -> 0.0
-      nil -> 1.0
       _ -> 4.0 / duration
     end
-    midi_duration = if dotted, do: midi_duration * 1.5, else: midi_duration
+    midi_duration = if midi_duration < 0, do: abs(midi_duration) * 1.5, else: midi_duration
     %{
       note_number: @midi_notes_map[key] + (octave * 12),
       duration: midi_duration,
@@ -428,7 +424,7 @@ defmodule Note do
     """
     # @spec to_string(t()) :: String.t()
     #def to_string(%__MODULE__{note: key, octave: octave, duration: duration}) do
-    def show(%Note{note: key, octave: octave, duration: duration, dotted: dotted}, opts \\ []) do
+    def show(%Note{note: key, octave: octave, duration: duration}, opts \\ []) do
       no_dur = if Keyword.has_key?(opts, :no_dur), do: Keyword.get(opts, :no_dur), else: false
 
       b = String.downcase(Atom.to_string(key))
@@ -440,7 +436,7 @@ defmodule Note do
         end
       end
 
-      dot_str = if dotted, do:  ".", else: ""
+      dot_str = if duration < 0, do:  ".", else: ""
 
       octave_str = case octave do
         6 -> "'''"
@@ -456,7 +452,7 @@ defmodule Note do
       if no_dur do
         "#{key_str}#{octave_str}"
       else
-        "#{key_str}#{octave_str}#{duration}#{dot_str}"
+        "#{key_str}#{octave_str}#{abs(duration)}#{dot_str}"
       end
     end
   end
