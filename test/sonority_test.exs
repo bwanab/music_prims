@@ -5,7 +5,7 @@ defmodule SonorityTest do
 
   describe "Sonority behavior" do
     test "get_type returns the correct type" do
-      note = Note.new({:C, 4})
+      note = Note.new(:C, 4)
       rest = Rest.new(1)
       chord = Chord.new([note], 1)
 
@@ -15,7 +15,7 @@ defmodule SonorityTest do
     end
 
     test "duration callback works through Sonority.get_type" do
-      note = Note.new({:C, 4}, duration: 2)
+      note = Note.new(:C, 4, 2)
       rest = Rest.new(1)
       chord = Chord.new([note], 2)
 
@@ -25,7 +25,7 @@ defmodule SonorityTest do
     end
 
     test "mapping a list of sonorities returns correct types" do
-      note = Note.new({:C, 4})
+      note = Note.new(:C, 4)
       chord1 = Chord.new([note], 1)
       chord2 = Chord.new(:C, :major, 4, 1)
       rest = Rest.new(1)
@@ -39,11 +39,11 @@ defmodule SonorityTest do
     @spec create_sonorities() :: [Sonority.t()]
     defp create_sonorities do
       [
-        Note.new({:C, 4}, duration: 1),
+        Note.new(:C, 4, 1),
         Rest.new(1),
         Chord.new(:A, :major, 4, 1),
-        Note.new({:E, 4}, duration: 1),
-        Note.new({:F, 4}, duration: 1)
+        Note.new(:E, 4, 1),
+        Note.new(:F, 4, 1)
       ]
     end
 

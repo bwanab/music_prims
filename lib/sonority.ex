@@ -33,7 +33,7 @@ defprotocol Sonority do
 
   ## Examples
 
-      iex> note = Note.new({:C, 4})
+      iex> note = Note.new(:C, 4)
       iex> Sonority.get_type(note)
       :note
 
@@ -41,7 +41,7 @@ defprotocol Sonority do
       iex> Sonority.get_type(rest)
       :rest
 
-      iex> chord = Chord.new([Note.new({:C, 4}), Note.new({:E, 4}), Note.new({:G, 4})], 1.0)
+      iex> chord = Chord.new([Note.new(:C, 4), Note.new(:E, 4), Note.new(:G, 4)], 1.0)
       iex> Sonority.get_type(chord)
       :chord
   """

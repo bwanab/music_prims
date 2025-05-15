@@ -5,7 +5,8 @@ defmodule Note do
   """
 
   @type t :: %__MODULE__{
-    note: {atom(), integer()},
+    note: atom(),
+    octave: integer(),
     duration: integer(),
     velocity: integer(),
     dotted: boolean
@@ -13,7 +14,7 @@ defmodule Note do
 
   @type scale :: [t()]
 
-  defstruct [:note, :duration, :velocity, :dotted]
+  defstruct [:note, :octave, :duration, :velocity, :dotted]
 
   # Notes and MIDI mapping
   @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
@@ -30,58 +31,60 @@ defmodule Note do
 
   @flat_key_map Enum.zip(@circle_of_fifths, @flat_circle_of_fifths) |> Enum.into(%{})
   @normal_flat_key_map @flat_key_map |> Map.merge(%{:F! => :F!, :C! => :C!})
-  @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
+  # @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
-  @doc """
-  Create a new note with the given key and octave.
-  """
-  @spec new({atom(), integer()} | t(), keyword()) :: t()
-  def new(note_or_tuple, opts \\ [])
+  # @doc """
+  # Create a new note with the given key and octave.
+  # """
+  # @spec new({atom(), integer()} | t(), keyword()) :: t()
+  # def new(note_or_tuple, opts \\ [])
 
-  def new(%__MODULE__{} = note, opts) do
-    duration = Keyword.get(opts, :duration, 4)
-    velocity = Keyword.get(opts, :velocity, 100)
-    dotted = Keyword.get(opts, :dotted, false)
-    %__MODULE__{note: note.note, duration: duration, velocity: velocity, dotted: dotted}
+  # def new(%__MODULE__{} = note, opts) do
+  #   duration = Keyword.get(opts, :duration, 4)
+  #   velocity = Keyword.get(opts, :velocity, 100)
+  #   dotted = Keyword.get(opts, :dotted, false)
+  #   %__MODULE__{note: note.note, duration: duration, velocity: velocity, dotted: dotted}
+  # end
+
+  def new(key, octave \\ 3, duration \\ 4, velocity \\ 100, dotted \\ false) do
+    %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, dotted: dotted}
   end
 
-  def new({key, octave}, opts) do
+  @spec copy(Note.t(), keyword()) :: Note.t()
+  def copy(%__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, dotted: dotted}, opts \\ []) do
     # Handle nil values and defaults
-    {duration, velocity, dotted} = case opts do
-      [] -> {4, 100, false}  # No options provided, both should be nil
-      _ ->
-        duration = Keyword.get(opts, :duration, 4)
-        velocity = Keyword.get(opts, :velocity, 100)
-        dotted = Keyword.get(opts, :dotted, false)
-        {duration, velocity, dotted}
-    end
-    %__MODULE__{note: {key, octave}, duration: duration, velocity: velocity, dotted: dotted}
+    key = Keyword.get(opts, :key, key)
+    octave = Keyword.get(opts, :octave, octave)
+    duration = Keyword.get(opts, :duration, duration)
+    velocity = Keyword.get(opts, :velocity, velocity)
+    dotted = Keyword.get(opts, :dotted, dotted)
+    Note.new(key, octave, duration, velocity, dotted)
   end
 
-  @doc """
-  Build a note sequence from a key and intervals.
-  """
-  @spec build_note_seq(atom, [integer], integer) :: scale
-  def build_note_seq(key, intervals, octave \\ 4) do
-    skey = map_by_flat_key(key)
-    raw_seq = Note.chromatic_scale(Note.new({skey, octave}))
-    |> Scale.raw_scale(intervals)
-    |> map_by_key(key)
+  # @doc """
+  # Build a note sequence from a key and intervals.
+  # """
+  # @spec build_note_seq(atom, [integer], integer) :: [Note.t()]
+  # def build_note_seq(key, intervals, octave \\ 4) do
+  #   skey = map_by_flat_key(key)
+  #   raw_seq = Note.chromatic_scale(Note.new(skey, octave))
+  #   |> Scale.raw_scale(intervals)
+  #   |> map_by_key(key)
 
-    # Convert to Note structs with quarter note durations (1) and velocity of 100
-    Enum.map(raw_seq, fn raw_note ->
-      Note.new(raw_note, duration: 1, velocity: 100)
-    end)
-  end
+  #   # Convert to Note structs with quarter note durations (1) and velocity of 100
+  #   Enum.map(raw_seq, fn raw_note ->
+  #     Note.copy(raw_note, duration: 1, velocity: 100)
+  #   end)
+  # end
 
-  @spec map_by_key([Note.t()], atom()) :: [Note.t()]
-  def map_by_key(seq, key) do
-    if MapSet.member?(Scale.normal_flat_set(), key_from_note(key)) do
-      Enum.map(seq, fn a -> map_by_sharp_key(a) end)
-    else
-      Enum.map(seq, fn a -> map_by_flat_key(a) end)
-    end
-   end
+  # @spec map_by_key([Note.t()], atom()) :: [Note.t()]
+  # def map_by_key(seq, key) do
+  #   if MapSet.member?(Scale.normal_flat_set(), key_from_note(key)) do
+  #     Enum.map(seq, fn a -> map_by_sharp_key(a) end)
+  #   else
+  #     Enum.map(seq, fn a -> map_by_flat_key(a) end)
+  #   end
+  #  end
 
   @doc """
   Get the key from a note.
@@ -99,7 +102,7 @@ defmodule Note do
   Convert a note or list of notes to MIDI value(s).
   """
   @spec to_midi(t() | [t()]) :: integer() | [integer()]
-  def to_midi(%__MODULE__{note: {key, octave}}) do
+  def to_midi(%__MODULE__{note: key, octave: octave}) do
     @midi_notes_map[key] + (octave * 12)
   end
   def to_midi(notes) when is_list(notes), do: Enum.map(notes, &to_midi/1)
@@ -154,7 +157,7 @@ defmodule Note do
   Get the next half step up from the given note.
   """
   @spec next_half_step(t()) :: t()
-  def next_half_step(%__MODULE__{note: {key, octave}} = note) do
+  def next_half_step(%__MODULE__{note: key, octave: octave} = note) do
     next_key = case key do
       :C -> :C!
       :C! -> :D
@@ -170,12 +173,12 @@ defmodule Note do
       :A -> :A!
       :A! -> :B
       :Bb -> :B
-      :B -> %{note | note: {:C, octave + 1}}
+      :B -> %{note | note: :C, octave: octave + 1}
     end
 
     case next_key do
       %__MODULE__{} -> next_key
-      key -> %{note | note: {key, octave}}
+      key -> %{note | note: key, octave: octave}
     end
   end
 
@@ -198,11 +201,11 @@ defmodule Note do
   Move a note or list of notes up or down an octave.
   """
   @spec bump_octave(t() | [t()], :up | :down) :: t() | [t()]
-  def bump_octave(%__MODULE__{note: {key, octave}} = note, :up) do
-    %{note | note: {key, octave + 1}}
+  def bump_octave(%__MODULE__{note: key, octave: octave} = note, :up) do
+    %{note | note: key, octave: octave + 1}
   end
-  def bump_octave(%__MODULE__{note: {key, octave}} = note, :down) do
-    %{note | note: {key, octave - 1}}
+  def bump_octave(%__MODULE__{note: key, octave: octave} = note, :down) do
+    %{note | note: key, octave: octave - 1}
   end
   def bump_octave(notes, direction) when is_list(notes) do
     Enum.map(notes, &bump_octave(&1, direction))
@@ -242,20 +245,20 @@ defmodule Note do
     end
   end
 
-  @doc """
-  Map a note to its flat key.
-  """
-  @spec map_by_flat_key(t() | atom()) :: t() | atom()
-  def map_by_flat_key(%__MODULE__{} = note) do
-    {key, octave} = note.note
-    %{note | note: {map_by_flat_key(key), octave}}
-  end
-  def map_by_flat_key(key) when is_atom(key) do
-    case Map.get(@sharp_key_map, key) do
-      nil -> key
-      val -> val
-    end
-  end
+  # @doc """
+  # Map a note to its flat key.
+  # """
+  # @spec map_by_flat_key(t() | atom()) :: t() | atom()
+  # def map_by_flat_key(%__MODULE__{} = note) do
+  #   {key, octave} = note.note
+  #   %{note | note: {map_by_flat_key(key), octave}}
+  # end
+  # def map_by_flat_key(key) when is_atom(key) do
+  #   case Map.get(@sharp_key_map, key) do
+  #     nil -> key
+  #     val -> val
+  #   end
+  # end
 
   @doc """
   Get the MIDI note number for a key.
@@ -263,57 +266,38 @@ defmodule Note do
   @spec note_map(atom()) :: integer()
   def note_map(note), do: @midi_notes_map[note]
 
-  @doc """
-  Adjust the octave of a scale by the given octave amount.
-  E.G. adjust_octave(scale, 1) will increase the octave of each note in the scale by 12.
-       adjust_octave(scale, -1) will decrease the octave of each note in the scale by 12.
-  """
-  @spec adjust_octave(scale(), integer()) :: scale()
-  def adjust_octave(scale, octave) when octave == 0, do: scale
-  def adjust_octave(scale = [%__MODULE__{} | _], octave) do
-    Enum.map(scale, fn %__MODULE__{note: {note, o}} = n -> %{n | note: {note, o + octave}} end)
-  end
-  def adjust_octave(scale, octave) do
-    Enum.map(scale, fn {note, o} -> {note, o + octave} end)
-  end
+  # @doc """
+  # Adjust the octave of a scale by the given octave amount.
+  # E.G. adjust_octave(scale, 1) will increase the octave of each note in the scale by 12.
+  #      adjust_octave(scale, -1) will decrease the octave of each note in the scale by 12.
+  # """
+  # @spec adjust_octave(scale(), integer()) :: scale()
+  # def adjust_octave(scale, octave) when octave == 0, do: scale
+  # def adjust_octave(scale = [%__MODULE__{} | _], octave) do
+  #   Enum.map(scale, fn %__MODULE__{note: note, octave: o} = n -> %{n | note: {note, o + octave}} end)
+  # end
+  # def adjust_octave(scale, octave) do
+  #   Enum.map(scale, fn {note, o} -> {note, o + octave} end)
+  # end
 
-  @doc """
-  Build a chromatic scale starting from the given note.
-  """
-  @spec chromatic_scale(t() | {atom(), integer()}) :: [t()]
-  def chromatic_scale(%__MODULE__{} = note) do
-    Enum.reduce(0..11, [note], fn _, [last | _] = acc ->
-      next = next_half_step(last)
-      # Map sharp notes to flat notes where appropriate
-      mapped_note = case next.note do
-        {:D!, o} -> %{next | note: {:Eb, o}}
-        {:G!, o} -> %{next | note: {:Ab, o}}
-        {:A!, o} -> %{next | note: {:Bb, o}}
-        _ -> next
-      end
-      [mapped_note | acc]
-    end)
-    |> Enum.reverse()
-  end
-  def chromatic_scale({key, octave}) do
-    chromatic_scale(new({key, octave}))
-  end
 
 
   @doc """
   Check if two notes are enharmonically equal.
   Handles both Note structs and {key, octave} tuples.
   """
-  @spec enharmonic_equal?(t | {atom, integer}, t | {atom, integer}) :: boolean
+  @spec enharmonic_equal?(t | {atom, integer} | atom, t | {atom, integer} | atom) :: boolean
   def enharmonic_equal?(note1, note2) do
     midi1 = case note1 do
       %Note{} -> to_midi(note1)
-      {key, octave} -> to_midi(new({key, octave}))
+      {key, octave} -> to_midi(new(key, octave))
+      _ -> to_midi(new(note1, 3))
     end
 
     midi2 = case note2 do
       %Note{} -> to_midi(note2)
-      {key, octave} -> to_midi(new({key, octave}))
+      {key, octave} -> to_midi(new(key, octave))
+      _ -> to_midi(new(note2, 3))
     end
 
     midi1 == midi2
@@ -323,7 +307,7 @@ defmodule Note do
   Convert a note to its MIDI note number, duration, and velocity.
   """
   @spec note_to_midi(t) :: %{note_number: integer, duration: number | nil, velocity: integer}
-  def note_to_midi(%Note{note: {key, octave}, duration: duration, velocity: velocity, dotted: dotted}) do
+  def note_to_midi(%Note{note: key, octave: octave, duration: duration, velocity: velocity, dotted: dotted}) do
     midi_duration = case duration do
       0 -> 0.0
       nil -> 1.0
@@ -341,11 +325,11 @@ defmodule Note do
   Convert a MIDI note number to a Note struct.
   """
   @spec midi_to_note(integer, number | nil, integer | nil) :: t
-  def midi_to_note(note_number, duration \\ nil, velocity \\ 100) do
+  def midi_to_note(note_number, duration \\ 4, velocity \\ 100) do
     octave = div(note_number - 12, 12)
     key_index = rem(note_number - 12, 12)
     key = Enum.at(@notes, key_index)
-    new({key, octave}, duration: duration, velocity: velocity)
+    new(key, octave, duration, velocity)
   end
 
   @doc """
@@ -368,7 +352,7 @@ defmodule Note do
   Check if a value is a valid note.
   """
   @spec is_note(t) :: boolean
-  def is_note(%Note{note: {n, o}}) do
+  def is_note(%Note{note: n, octave: o}) do
     Enum.any?(circle_of_fifths(), &(&1 == n)) and is_integer(o)
   end
 
@@ -379,23 +363,23 @@ defmodule Note do
   @spec to_keyword_list([t]) :: keyword(integer)
   def to_keyword_list(notes) do
     Enum.map(notes, fn
-      %Note{note: {key, octave}} -> {key, octave}
-      %Note{note: %Note{note: {key, octave}}} -> {key, octave}
+      %Note{note: key, octave: octave} -> {key, octave}
+      %Note{note: %Note{note: key, octave: octave}} -> {key, octave}
       {key, octave} -> {key, octave}
     end)
   end
 
-  @doc """
-  Rotate a list of notes by the given amount.
-  """
-  @spec rotate_notes([t], integer) :: [t]
-  def rotate_notes(notes, n) do
-    {l, r} = Enum.split(notes, n)
-    r ++ Enum.map(l, fn
-      %Note{note: {key, octave}} -> new({key, octave + 1})
-      {key, octave} -> new({key, octave + 1})
-    end)
-  end
+  # @doc """
+  # Rotate a list of notes by the given amount.
+  # """
+  # @spec rotate_notes([t], integer) :: [t]
+  # def rotate_notes(notes, n) do
+  #   {l, r} = Enum.split(notes, n)
+  #   r ++ Enum.map(l, fn
+  #     %Note{note: {key, octave}} -> new({key, octave + 1})
+  #     {key, octave} -> new({key, octave + 1})
+  #   end)
+  # end
 
   @doc """
   Get the circle of fifths.
@@ -443,8 +427,8 @@ defmodule Note do
     Convert a note to a Lilypond string representation.
     """
     # @spec to_string(t()) :: String.t()
-    #def to_string(%__MODULE__{note: {key, octave}, duration: duration}) do
-    def show(%Note{note: {key, octave}, duration: duration, dotted: dotted}, opts \\ []) do
+    #def to_string(%__MODULE__{note: key, octave: octave, duration: duration}) do
+    def show(%Note{note: key, octave: octave, duration: duration, dotted: dotted}, opts \\ []) do
       no_dur = if Keyword.has_key?(opts, :no_dur), do: Keyword.get(opts, :no_dur), else: false
 
       b = String.downcase(Atom.to_string(key))

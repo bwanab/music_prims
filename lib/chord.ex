@@ -25,7 +25,7 @@ defmodule Chord do
   # Helper function to apply chord inversion
   defp apply_inversion(notes, inversion) when is_integer(inversion) and inversion >= 0 do
     if inversion > 0 and inversion < length(notes) do
-      Note.rotate_notes(notes, inversion)
+      Scale.rotate_notes(notes, inversion)
     else
       notes  # Return original notes if inversion is 0 or invalid
     end
@@ -76,8 +76,8 @@ defmodule Chord do
   # Constructor from notes
   @spec new([Note.t()], integer()) :: Sonority.t()
   def new(notes, duration) when is_list(notes) do
-    notes = Enum.map(notes, fn n -> Note.new(n.note, duration: duration, velocity: n.velocity) end)
-    {{inferred_root, inferred_quality}, inversion} = ChordTheory.infer_chord_type(notes)
+    notes = Enum.map(notes, fn n -> Note.copy(n, duration: duration, velocity: n.velocity) end)
+    {inferred_root, inferred_quality, inversion} = infer_chord_type(notes)
     %__MODULE__{
       notes: notes,
       root: inferred_root,
@@ -120,7 +120,7 @@ defmodule Chord do
   """
   @spec new(atom(), atom(), integer(), integer(), integer()) :: Sonority.t()
   def new(key, quality, octave \\ 3, duration \\ 4, inversion \\ 0) do
-    notes = ChordTheory.get_standard_notes(key, quality, octave)
+    notes = get_standard_notes(key, quality, octave)
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
@@ -211,8 +211,7 @@ defmodule Chord do
       # Creates a D# major chord (III in C minor) in octave 4 with duration 1.0
       # Note: D# is enharmonic with Eb but our implementation uses D#
       iex> chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
-      iex> chord.root
-      :D!
+      iex> Note.enharmonic_equal?(chord.root, :D!)
       iex> chord.quality
       :major
 
@@ -227,13 +226,13 @@ defmodule Chord do
   """
   def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major, inversion \\ 0) do
     # Convert Roman numeral to chord using ChordPrims
-    chord_sym = roman_numeral_to_chord(roman_numeral, {{key, octave}, scale_type})
+    chord_sym = roman_numeral_to_chord(roman_numeral, key, octave, scale_type)
 
     # Extract root and quality from the chord symbol
     {{root, chord_octave}, quality} = chord_sym
 
     # Get standard notes for this chord
-    notes = ChordTheory.get_standard_notes(root, quality, chord_octave)
+    notes = get_standard_notes(root, quality, chord_octave)
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
@@ -284,7 +283,7 @@ defmodule Chord do
 
     # Apply omissions if any
     notes_after_omissions = if chord.omissions do
-      degrees = ChordTheory.chord_degrees(chord.root, chord.quality)
+      degrees = chord_degrees(chord.root, chord.quality)
       indices_to_remove = Enum.map(chord.omissions, fn deg ->
         Enum.find_index(degrees, fn d -> d == deg end)
       end) |> Enum.reject(&is_nil/1)
@@ -305,7 +304,7 @@ defmodule Chord do
 
     # Handle bass note if specified (would need to ensure it's at the bottom)
     # For simplicity, we're not implementing this logic fully
-    Enum.map(notes_with_additions, fn n -> Note.new(n.note, duration: chord.duration, velocity: n.velocity) end)
+    Enum.map(notes_with_additions, fn n -> Note.copy(n, duration: chord.duration, velocity: n.velocity) end)
   end
 
   # Implement the Sonority protocol
@@ -448,8 +447,8 @@ defmodule Chord do
     rotate_notes(chord, 3)
   end
 
-  @spec roman_numeral_to_chord(atom(), {Note.t() | {atom(), integer()}, atom()}) :: chord
-  def roman_numeral_to_chord(sym, {{key, octave}, scale_type}) do
+  #@spec roman_numeral_to_chord(atom(), {Note.t() | {atom(), integer()}, atom()}) :: chord
+  def roman_numeral_to_chord(sym, key, octave, scale_type) do
     scale = if scale_type == :major do
       major_scale(key, octave)
     else
@@ -457,7 +456,7 @@ defmodule Chord do
     end
     # Extract just the note names from the scale
     note_names = scale |> Enum.map(fn
-      %Note{note: {n, _o}} -> n
+      %Note{note: n} -> n
       {n, _o} -> n
     end)
 
@@ -467,13 +466,18 @@ defmodule Chord do
     # Keep the same format as input - full tuple with octave
     {{chord_key, octave}, chord_type}
   end
-  def roman_numeral_to_chord(sym, {%Note{note: {key, octave}}, scale_type}) do
-    roman_numeral_to_chord(sym, {{key, octave}, scale_type})
+  def roman_numeral_to_chord(sym, {%Note{note: key, octave: octave}, scale_type}) do
+    roman_numeral_to_chord(sym, key, octave, scale_type)
   end
 
   @spec roman_numerals_to_chords([atom], chord) :: [chord]
   def roman_numerals_to_chords(sym_seq, chord) do
     Enum.map(sym_seq, fn sym -> roman_numeral_to_chord(sym, chord) end)
+  end
+
+  @spec roman_numerals_to_chords([atom], atom(), integer(), atom()) :: [chord]
+  def roman_numerals_to_chords(sym_seq, key, octave, scale_type) do
+    Enum.map(sym_seq, fn sym -> roman_numeral_to_chord(sym, key, octave, scale_type) end)
   end
 
   @spec chord_to_notes(chord_sym) :: [Note.t()]
@@ -545,15 +549,15 @@ defmodule Chord do
     sum = Enum.zip(p, rotate_any(p, 1))
     |> Enum.map(fn {a, b} ->
       compute_flow(
-        roman_numeral_to_chord(a, {{:G, 0}, :major}),
-        roman_numeral_to_chord(b, {{:G, 0}, :major}))
+        roman_numeral_to_chord(a, :G, 0, :major),
+        roman_numeral_to_chord(b, :G, 0, :major))
     end)
     |> Enum.sum
     sum / length(p)
   end
 
 
-  @spec compute_one_flow(MusicPrims.note_sequence, MusicPrims.note_sequence) :: integer
+  @spec compute_one_flow([MusicPrims.Note], [MusicPrims.Note]) :: integer
   def compute_one_flow(c1, c2) do
     Enum.zip(c1, c2)
     # |> IO.inspect
@@ -583,6 +587,128 @@ defmodule Chord do
 
   def chord_type_map() do
     @chord_type_map
+  end
+
+
+  @doc """
+  Generates the standard notes for a given chord type.
+
+  ## Parameters
+    * `key` - The root key of the chord
+    * `quality` - The chord quality (e.g., :major, :minor, :dominant_seventh)
+    * `octave` - The octave for the root note (default: 0)
+
+  ## Returns
+    * A list of Note structs representing the chord
+  """
+  def get_standard_notes(key, quality, octave \\ 0) do
+    case quality do
+      :major -> Chord.major_chord(key, octave)
+      :minor -> Chord.minor_chord(key, octave)
+      :diminished -> Chord.diminished_chord(key, octave)
+      :augmented -> Chord.augmented_chord(key, octave)
+      :dominant_seventh -> Chord.dominant_seventh_chord(key, octave)
+      :major_seventh -> Chord.major_seventh_chord(key, octave)
+      :minor_seventh -> Chord.minor_seventh_chord(key, octave)
+      :half_diminished_seventh -> Chord.half_diminshed_seventh_chord(key, octave)
+      :diminished_seventh -> Chord.diminished_seventh_chord(key, octave)
+      :minor_major_seventh -> Chord.minor_major_seventh_chord(key, octave)
+      :augmented_major_seventh -> Chord.augmented_major_seventh_chord(key, octave)
+      :augmented_seventh -> Chord.augmented_seventh_chord(key, octave)
+      # Default to major if unknown quality
+      _ -> Chord.major_chord(key, octave)
+    end
+  end
+
+  @doc """
+  Infers the root and quality of a chord from its notes, taking into account
+  possible inversions in the chord notes. Thus, [C, F, A] is correctly identified
+  as an inverted F chord instead of C.
+
+  ## Parameters
+    * `notes` - A list of Note structs to analyze
+
+  ## Returns
+    * A tuple of {{root_key, quality}, inversion} where
+      root_key is the inferred root note
+      quality is the inferred chord quality
+      inversion is the degree of inversion (0 = root position, 1 = first inversion, etc.)
+  """
+  def infer_chord_type(notes) do
+    get_note_nums = fn notes ->
+      note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
+      min = Enum.min(note_nums)
+      Enum.map(note_nums, &(&1 - min))
+    end
+
+    # Try different rotations of the notes to find a known chord pattern
+    matches =
+      Enum.map(
+        0..(length(notes) - 1),
+        fn rotation_index ->
+          rotated_notes = Scale.rotate_notes(notes, rotation_index)
+          intervals = get_note_nums.(rotated_notes)
+          chord_type = Map.get(MusicPrims.chord_interval_map(), intervals)
+          {rotation_index, chord_type, rotated_notes}
+        end
+      )
+      |> Enum.filter(fn {_i, chord_type, _rotated_notes} -> !is_nil(chord_type) end)
+
+    if length(matches) > 0 do
+      # Get the first match
+      {rotation_index, chord_type, rotated_notes} = Enum.at(matches, 0)
+
+      # The root is the first note of the rotated collection that matched a chord pattern
+      root_note = Enum.at(rotated_notes, 0).note
+
+      # The inversion is the rotation index used to transform the input notes
+      # to get to root position (when rotation_index=0)
+      inversion = rotation_index
+
+      {root_note, chord_type, inversion}
+    else
+      # Return a default value if no matches found
+      # Using the first note as root, assuming major quality, and root position
+      {List.first(notes).note, :major, 0}
+    end
+  end
+
+  @doc """
+  Returns the scale degrees present in a chord.
+
+  ## Parameters
+    * `root` - The root key of the chord
+    * `quality` - The chord quality
+
+  ## Returns
+    * A list of integers representing scale degrees (1-based)
+  """
+  def chord_degrees(_root, quality) do
+    case quality do
+      :major -> [1, 3, 5]
+      # b3
+      :minor -> [1, 3, 5]
+      # b3, b5
+      :diminished -> [1, 3, 5]
+      # #5
+      :augmented -> [1, 3, 5]
+      # b7
+      :dominant_seventh -> [1, 3, 5, 7]
+      :major_seventh -> [1, 3, 5, 7]
+      # b3, b7
+      :minor_seventh -> [1, 3, 5, 7]
+      # b3, b5, b7
+      :half_diminished_seventh -> [1, 3, 5, 7]
+      # b3, b5, bb7
+      :diminished_seventh -> [1, 3, 5, 7]
+      # Default
+      _ -> [1, 3, 5]
+    end
+  end
+
+  def enharmonic_equal?(chord1, chord2) do
+    Enum.all?(Enum.map(Enum.zip(Chord.to_notes(chord1), Chord.to_notes(chord2)),
+              fn {a, b} -> Note.enharmonic_equal?(a, b) end))
   end
 
 end

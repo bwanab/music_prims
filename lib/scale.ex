@@ -17,8 +17,8 @@ defmodule Scale do
   @normal_flat [:G!, :D!, :A!, :F, :Gb, :Db, :Ab, :Eb, :Bb]
   @flats [:Gb, :Db, :Ab, :Eb, :Bb]
 
-  @flat_key_map Enum.zip(@circle_of_fifths, @flat_circle_of_fifths) |> Enum.into(%{})
-  @normal_flat_key_map @flat_key_map |> Map.merge(%{:F! => :F!, :C! => :C!})
+  # @flat_key_map Enum.zip(@circle_of_fifths, @flat_circle_of_fifths) |> Enum.into(%{})
+  # @normal_flat_key_map @flat_key_map |> Map.merge(%{:F! => :F!, :C! => :C!})
   @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
   def normal_flat_set() do
@@ -32,6 +32,28 @@ defmodule Scale do
   def scale_interval(mode) do
     mode_num = @modes[mode]
     @major_intervals |> rotate_zero(mode_num)
+  end
+
+  @doc """
+  Build a chromatic scale starting from the given note.
+  """
+  @spec chromatic_scale(Note | {atom(), integer()}) :: [Note.t()]
+  def chromatic_scale(%Note{} = note) do
+    Enum.reduce(0..11, [note], fn _, [last | _] = acc ->
+      next = Note.next_half_step(last)
+      # Map sharp notes to flat notes where appropriate
+      mapped_note = case {next.note, next.octave} do
+        {:D!, o} -> %{next | note: :Eb, octave: o}
+        {:G!, o} -> %{next | note: :Ab, octave: o}
+        {:A!, o} -> %{next | note: :Bb, octave: o}
+        _ -> next
+      end
+      [mapped_note | acc]
+    end)
+    |> Enum.reverse()
+  end
+  def chromatic_scale(key, octave) do
+    chromatic_scale(Note.new(key, octave))
   end
 
   @doc """
@@ -67,15 +89,17 @@ defmodule Scale do
   """
   @spec build_note_seq(atom, [integer], integer) :: scale
   def build_note_seq(key, intervals, octave \\ 0) do
-    skey = map_by_flat_key(key)
-    raw_seq = Note.chromatic_scale(Note.new({skey, octave}))
+    map_by_flat_key(key)
+    |> Note.new(octave)
+    |> chromatic_scale()
     |> raw_scale(intervals)
-    |> map_by_key(key)
-
-    # Convert to Note structs with quarter note durations (1) and velocity of 100
-    Enum.map(raw_seq, fn raw_note ->
-      Note.new(raw_note, duration: 1, velocity: 100)
-    end)
+    # IO.inspect(rs)
+    # raw_seq = map_by_key(rs, key)
+    # IO.inspect(raw_seq)
+    # # Convert to Note structs with quarter note durations (1) and velocity of 100
+    # Enum.map(raw_seq, fn raw_note ->
+    #   Note.new(raw_note, octave, 1, 100)
+    # end)
   end
 
   @doc """
@@ -114,8 +138,8 @@ defmodule Scale do
   def rotate_notes(notes, n) do
     {l, r} = Enum.split(notes, n)
     r ++ Enum.map(l, fn
-      %Note{note: {key, octave}} -> Note.new({key, octave + 1})
-      {key, octave} -> Note.new({key, octave + 1})
+      %Note{note: key, octave: octave} -> Note.new(key, octave + 1)
+      {key, octave} -> Note.new(key, octave + 1)
     end)
   end
 
@@ -166,33 +190,33 @@ defmodule Scale do
   defp map_by_flat_key(nk) do
     if MapSet.member?(MapSet.new(@flats), key_from_note(nk)) do
       new_key = Map.get(@sharp_key_map, key_from_note(nk))
-      if is_tuple(nk), do: Note.new({new_key, elem(nk, 1)}), else: new_key
+      if is_tuple(nk), do: Note.new(new_key, elem(nk, 1)), else: new_key
     else
       nk
     end
   end
 
-  defp map_by_key(seq, key) do
-    if MapSet.member?(MapSet.new(@normal_flat), key_from_note(key)) do
-      Enum.map(seq, &map_by_sharp_key/1)
-    else
-      Enum.map(seq, &map_by_flat_key/1)
-    end
-  end
+  # defp map_by_key(seq, key) do
+  #   if MapSet.member?(MapSet.new(@normal_flat), key_from_note(key)) do
+  #     Enum.map(seq, &map_by_sharp_key/1)
+  #   else
+  #     Enum.map(seq, &map_by_flat_key/1)
+  #   end
+  # end
 
-  defp map_by_sharp_key(nk, context \\ :normal)
-  defp map_by_sharp_key(%Note{note: {key, octave}} = note, context) do
-    mapped_key = map_by_sharp_key(key, context)
-    %{note | note: {mapped_key, octave}}
-  end
-  defp map_by_sharp_key(nk, context) do
-    key_map = if context == :normal, do: @normal_flat_key_map, else: @flat_key_map
-    k = case Map.get(key_map, key_from_note(nk)) do
-      nil -> key_from_note(nk)
-      val -> val
-    end
-    if is_tuple(nk), do: Note.new({k, elem(nk, 1)}), else: k
-  end
+  # defp map_by_sharp_key(nk, context \\ :normal)
+  # defp map_by_sharp_key(%Note{note: {key, octave}} = note, context) do
+  #   mapped_key = map_by_sharp_key(key, context)
+  #   %{note | note: {mapped_key, octave}}
+  # end
+  # defp map_by_sharp_key(nk, context) do
+  #   key_map = if context == :normal, do: @normal_flat_key_map, else: @flat_key_map
+  #   k = case Map.get(key_map, key_from_note(nk)) do
+  #     nil -> key_from_note(nk)
+  #     val -> val
+  #   end
+  #   if is_tuple(nk), do: Note.new(k, elem(nk, 1)), else: k
+  # end
 
 
   @doc """
@@ -205,8 +229,7 @@ defmodule Scale do
   @spec equivalent_key(atom, atom, atom) :: atom
   def equivalent_key(key, key_mode, equivlent_mode) do
     index = @modes[equivlent_mode] - @modes[key_mode]
-    {rkey, _} = Enum.at(modal_scale(key, 0, key_mode), index).note
-    rkey
+    Enum.at(modal_scale(key, 0, key_mode), index).note
   end
 
 
@@ -226,5 +249,11 @@ defmodule Scale do
   end
 
   defp key_from_note(n) when is_atom(n), do: n
-  defp key_from_note(%Note{note: {key, _o}}), do: key
+  defp key_from_note(%Note{note: key}), do: key
+
+  def enharmonic_equal?(scale1, scale2) do
+    Enum.all?(Enum.map(Enum.zip(scale1, scale2),
+              fn {a, b} -> Note.enharmonic_equal?(a, b) end))
+  end
+
 end

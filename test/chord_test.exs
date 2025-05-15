@@ -5,15 +5,15 @@ defmodule ChordTest do
   describe "Chord.new/2 from notes" do
     test "creates a chord from a list of notes" do
       notes = [
-        Note.new({:C, 4}),
-        Note.new({:E, 4}),
-        Note.new({:G, 4})
+        Note.new(:C, 4),
+        Note.new(:E, 4),
+        Note.new(:G, 4)
       ]
       chord = Chord.new(notes, 4)
       assert chord.notes == notes
       assert chord.duration == 4
       # Root is now a tuple with octave information
-      assert elem(chord.root, 0) == :C
+      assert chord.root == :C
       assert chord.quality == :major
       assert chord.inversion == 0
     end
@@ -21,26 +21,26 @@ defmodule ChordTest do
     test "detects a chord's inversion from notes" do
       # First inversion C major
       notes = [
-        Note.new({:E, 4}),
-        Note.new({:G, 4}),
-        Note.new({:C, 5})
+        Note.new(:E, 4),
+        Note.new(:G, 4),
+        Note.new(:C, 5)
       ]
       chord = Chord.new(notes, 4)
       # Root is now a tuple with octave information
-      assert elem(chord.root, 0) == :C
+      assert chord.root == :C
       assert chord.quality == :major
       # The actual inversion calculation in the implementation
       assert chord.inversion == 2
 
       # Second inversion C major
       notes = [
-        Note.new({:G, 4}),
-        Note.new({:C, 5}),
-        Note.new({:E, 5})
+        Note.new(:G, 4),
+        Note.new(:C, 5),
+        Note.new(:E, 5)
       ]
       chord = Chord.new(notes, 4)
       # Root is now a tuple with octave information
-      assert elem(chord.root, 0) == :C
+      assert chord.root == :C
       assert chord.quality == :major
       # The actual inversion calculation in the implementation
       assert chord.inversion == 1
@@ -65,7 +65,7 @@ defmodule ChordTest do
       assert chord.inversion == 1
 
       # Check that the notes are actually in first inversion
-      note_names = Enum.map(chord.notes, fn %Note{note: {key, octave}} -> {key, octave} end)
+      note_names = Enum.map(chord.notes, fn %Note{note: key, octave: octave} -> {key, octave} end)
       assert note_names == [{:E, 4}, {:G, 4}, {:C, 5}]
     end
   end
@@ -73,22 +73,22 @@ defmodule ChordTest do
   describe "Chord.new from infer_chord_type result" do
     test "creates a chord from infer_chord_type result" do
       notes = [
-        Note.new({:E, 4}),
-        Note.new({:G, 4}),
-        Note.new({:C, 5})
+        Note.new(:E, 4),
+        Note.new(:G, 4),
+        Note.new(:C, 5)
       ]
       # chord_info = ChordTheory.infer_chord_type(notes)
       chord = Chord.new(notes, 4)
 
       # Root is now a tuple with octave information
-      assert elem(chord.root, 0) == :C
+      assert chord.root == :C
       assert chord.quality == :major
       # The actual inversion calculation in the implementation
       assert chord.inversion == 2
       assert chord.duration == 4
 
       # Check the notes in the chord - they should be in root position now
-      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      note_names = Enum.map(chord.notes, fn %Note{note: key} -> key end)
       assert Enum.member?(note_names, :C)
       assert Enum.member?(note_names, :E)
       assert Enum.member?(note_names, :G)
@@ -126,7 +126,7 @@ defmodule ChordTest do
       assert chord.inversion == 0
 
       # Check that notes match C major
-      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      note_names = Enum.map(chord.notes, fn %Note{note: key} -> key end)
       assert note_names == [:C, :E, :G]
     end
 
@@ -138,7 +138,7 @@ defmodule ChordTest do
       assert chord.inversion == 0
 
       # Check that notes match D minor
-      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      note_names = Enum.map(chord.notes, fn %Note{note: key} -> key end)
       assert note_names == [:D, :F, :A]
     end
 
@@ -150,7 +150,7 @@ defmodule ChordTest do
       assert chord.inversion == 0
 
       # Check that notes match D7
-      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      note_names = Enum.map(chord.notes, fn %Note{note: key} -> key end)
       assert note_names == [:D, :F!, :A, :C]
     end
 
@@ -159,14 +159,14 @@ defmodule ChordTest do
 
       # The chord is stored as a D# major chord (using D! in our system)
       # but the notes themselves are represented with their enharmonic Eb major equivalents
-      assert chord.root == :D!
+      assert Note.enharmonic_equal?(chord.root, :D!)
       assert chord.quality == :major
       assert chord.duration == 4
       assert chord.inversion == 0
 
       # The actual notes are in Eb major (enharmonic equivalent)
-      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
-      assert note_names == [:Eb, :G, :Bb]
+      note_names = Enum.map(chord.notes, fn %Note{note: key} -> key end)
+      assert Enum.all?(Enum.map(Enum.zip([:Eb, :G, :Bb], note_names), fn {a,b} -> Note.enharmonic_equal?(a, b) end))
     end
 
     test "creates a minor i chord in A minor" do
@@ -177,7 +177,7 @@ defmodule ChordTest do
       assert chord.inversion == 0
 
       # Check that notes match A minor
-      note_names = Enum.map(chord.notes, fn %Note{note: {key, _}} -> key end)
+      note_names = Enum.map(chord.notes, fn %Note{note: key} -> key end)
       assert note_names == [:A, :C, :E]
     end
 
@@ -190,7 +190,7 @@ defmodule ChordTest do
 
       # Check that notes are in first inversion
       note_structs = chord.notes
-      note_names = Enum.map(note_structs, fn %Note{note: {key, octave}} -> {key, octave} end)
+      note_names = Enum.map(note_structs, fn %Note{note: key, octave: octave} -> {key, octave} end)
       assert note_names == [{:E, 4}, {:G, 4}, {:C, 5}]
 
       # Second inversion V chord in G
@@ -201,7 +201,7 @@ defmodule ChordTest do
 
       # Check that notes are in second inversion
       note_structs = chord.notes
-      note_names = Enum.map(note_structs, fn %Note{note: {key, octave}} -> {key, octave} end)
+      note_names = Enum.map(note_structs, fn %Note{note: key, octave: octave} -> {key, octave} end)
       assert note_names == [{:A, 3}, {:D, 4}, {:F!, 4}]
     end
   end
@@ -267,7 +267,7 @@ defmodule ChordTest do
 
   test "with_additions adds notes to the chord" do
     chord = Chord.new(:C, :major)
-    |> Chord.with_additions([Note.new({:D, 4})])
+    |> Chord.with_additions([Note.new(:D, 4)])
     assert length(Chord.to_notes(chord)) == 4
   end
 

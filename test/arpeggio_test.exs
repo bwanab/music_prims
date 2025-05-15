@@ -20,7 +20,7 @@ defmodule ArpeggioTest do
       notes = Arpeggio.to_notes(arpeggio)
 
       assert length(notes) == 3
-      assert Enum.map(notes, & &1.note) == [{:C, 4}, {:E, 4}, {:G, 4}]
+      assert Enum.map(notes, & &1.note) == [:C, :E, :G]
       assert Enum.all?(notes, & &1.duration == 4)
     end
 
@@ -30,7 +30,7 @@ defmodule ArpeggioTest do
       notes = Arpeggio.to_notes(arpeggio)
 
       assert length(notes) == 3
-      assert Enum.map(notes, & &1.note) == [{:G, 4}, {:E, 4}, {:C, 4}]
+      assert Enum.map(notes, & &1.note) == [:G, :E, :C]
       assert Enum.all?(notes, & &1.duration == 4)
     end
 
@@ -40,7 +40,7 @@ defmodule ArpeggioTest do
       notes = Arpeggio.to_notes(arpeggio)
 
       assert length(notes) == 4
-      assert Enum.map(notes, & &1.note) == [{:C, 4}, {:E, 4}, {:G, 4}, {:E, 4}]
+      assert Enum.map(notes, & &1.note) == [:C, :E, :G, :E]
       assert Enum.all?(notes, & &1.duration == 4)
     end
 
@@ -50,7 +50,8 @@ defmodule ArpeggioTest do
       notes = Arpeggio.to_notes(arpeggio)
 
       assert length(notes) == 4
-      assert Enum.map(notes, & &1.note) == [{:G, 4}, {:E, 4}, {:C, 4}, {:E, 4}]
+      assert Enum.map(notes, & &1.note) == [:G, :E, :C, :E]
+      assert Enum.all?(notes, & &1.octave == 4)
       assert Enum.all?(notes, & &1.duration == 4)
     end
 
@@ -60,7 +61,7 @@ defmodule ArpeggioTest do
       notes = Arpeggio.to_notes(arpeggio)
 
       assert length(notes) == 3
-      assert Enum.map(notes, & &1.note) == [{:E, 4}, {:C, 4}, {:G, 4}]
+      assert Enum.map(notes, & &1.note) ==  [:E, :C, :G]
       assert Enum.all?(notes, & &1.duration == 4)
     end
   end
@@ -72,7 +73,7 @@ defmodule ArpeggioTest do
       notes = Arpeggio.repeat(arpeggio, 2)
 
       assert length(notes) == 6
-      assert Enum.map(notes, & &1.note) == [{:C, 4}, {:E, 4}, {:G, 4}, {:C, 4}, {:E, 4}, {:G, 4}]
+      assert Enum.map(notes, & &1.note) == [:C, :E, :G, :C, :E, :G]
       assert Enum.all?(notes, & &1.duration == 4)
     end
   end

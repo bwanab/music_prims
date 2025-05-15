@@ -103,6 +103,6 @@ defmodule MusicPrims do
   #defdelegate next_half_step(note), to: Note
   #defdelegate next_nth(note, circle), to: Note
   defdelegate map_by_sharp_key(note_or_key, context \\ :normal), to: Note
-  defdelegate map_by_flat_key(note), to: Note
+  #defdelegate map_by_flat_key(note), to: Note
 
 end

@@ -65,7 +65,7 @@ defmodule Arpeggio do
   end
 
   defp to_notes(arpeggio, pattern) do
-    notes = Chord.to_notes(arpeggio.chord) |> Enum.map(fn n -> Note.new(n.note, duration: arpeggio.duration) end)
+    notes = Chord.to_notes(arpeggio.chord) |> Enum.map(fn n -> Note.copy(n, duration: arpeggio.duration) end)
     Enum.map(pattern, fn p -> Enum.at(notes, p - 1) end)
   end
 
