@@ -134,6 +134,20 @@ defmodule Chord do
     }
   end
 
+  def copy(chord, opts \\ []) do
+    root = Keyword.get(opts, :root, chord.root)
+    quality = Keyword.get(opts, :quality, chord.quality)
+    octave = Keyword.get(opts, :octave, octave(chord))
+    duration = Keyword.get(opts, :duration, chord.duration)
+    inversion = Keyword.get(opts, :inversion, chord.inversion)
+
+    Chord.new(root, quality, octave, duration, inversion)
+  end
+
+  def octave(chord) do
+    Enum.at(Sonority.to_notes(chord), 0).octave
+  end
+
 
   @doc """
   Specifies the bass note for the chord, creating a slash chord.
