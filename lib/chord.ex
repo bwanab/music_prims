@@ -283,11 +283,7 @@ defmodule Chord do
 
     # Apply omissions if any
     notes_after_omissions = if chord.omissions do
-      degrees = chord_degrees(chord.root, chord.quality)
-      indices_to_remove = Enum.map(chord.omissions, fn deg ->
-        Enum.find_index(degrees, fn d -> d == deg end)
-      end) |> Enum.reject(&is_nil/1)
-
+      indices_to_remove = MapSet.new(chord.omissions)
       Enum.with_index(base_notes)
       |> Enum.reject(fn {_, idx} -> idx in indices_to_remove end)
       |> Enum.map(fn {note, _} -> note end)
@@ -620,6 +616,32 @@ defmodule Chord do
     end
   end
 
+def get_intervals(notes) do
+  note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
+  min = Enum.min(note_nums)
+  Enum.with_index(Enum.map(note_nums, &(&1 - min)))
+  |> Enum.sort()
+end
+
+def get_matches(notes) do
+  get_note_nums = fn notes ->
+    note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
+    min = Enum.min(note_nums)
+    Enum.map(note_nums, &(&1 - min))
+  end
+
+  Enum.map(
+      0..(length(notes) - 1),
+      fn rotation_index ->
+        rotated_notes = Scale.rotate_notes(notes, rotation_index)
+        intervals = get_note_nums.(rotated_notes)
+        chord_type = Map.get(MusicPrims.chord_interval_map(), intervals)
+        {rotation_index, chord_type, rotated_notes}
+      end
+    )
+    |> Enum.filter(fn {_i, chord_type, _rotated_notes} -> !is_nil(chord_type) end)
+end
+
   @doc """
   Infers the root and quality of a chord from its notes, taking into account
   possible inversions in the chord notes. Thus, [C, F, A] is correctly identified
@@ -635,24 +657,16 @@ defmodule Chord do
       inversion is the degree of inversion (0 = root position, 1 = first inversion, etc.)
   """
   def infer_chord_type(notes) do
-    get_note_nums = fn notes ->
-      note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
-      min = Enum.min(note_nums)
-      Enum.map(note_nums, &(&1 - min))
+    matches = get_matches(notes)
+    matches = if length(matches) == 0 do
+      # here we say there's no direct rotation of the notes as given, but we will sort them
+      # and see if there's a rotation that works.
+      note_nums = Enum.map(notes, fn note -> Note.note_to_midi(note) end)
+      sorted_notes = Enum.zip(note_nums, notes) |> Enum.sort |> Enum.map(fn {_, n} -> n end)
+      get_matches(sorted_notes)
+    else
+      matches
     end
-
-    # Try different rotations of the notes to find a known chord pattern
-    matches =
-      Enum.map(
-        0..(length(notes) - 1),
-        fn rotation_index ->
-          rotated_notes = Scale.rotate_notes(notes, rotation_index)
-          intervals = get_note_nums.(rotated_notes)
-          chord_type = Map.get(MusicPrims.chord_interval_map(), intervals)
-          {rotation_index, chord_type, rotated_notes}
-        end
-      )
-      |> Enum.filter(fn {_i, chord_type, _rotated_notes} -> !is_nil(chord_type) end)
 
     if length(matches) > 0 do
       # Get the first match
