@@ -13,11 +13,11 @@ defmodule ArpeggioTest do
     end
   end
 
-  describe "Arpeggio.to_notes/1" do
+  describe "Sonority.to_notes/1" do
     test "converts up pattern to notes" do
       chord = Chord.new(:C, :major, 4, 1)
       arpeggio = Arpeggio.new(chord, :up, 4)
-      notes = Arpeggio.to_notes(arpeggio)
+      notes = Sonority.to_notes(arpeggio)
 
       assert length(notes) == 3
       assert Enum.map(notes, & &1.note) == [:C, :E, :G]
@@ -27,7 +27,7 @@ defmodule ArpeggioTest do
     test "converts down pattern to notes" do
       chord = Chord.new(:C, :major, 4, 1)
       arpeggio = Arpeggio.new(chord, :down, 4)
-      notes = Arpeggio.to_notes(arpeggio)
+      notes = Sonority.to_notes(arpeggio)
 
       assert length(notes) == 3
       assert Enum.map(notes, & &1.note) == [:G, :E, :C]
@@ -37,7 +37,7 @@ defmodule ArpeggioTest do
     test "converts up_down pattern to notes" do
       chord = Chord.new(:C, :major, 4, 1)
       arpeggio = Arpeggio.new(chord, :up_down, 4)
-      notes = Arpeggio.to_notes(arpeggio)
+      notes = Sonority.to_notes(arpeggio)
 
       assert length(notes) == 4
       assert Enum.map(notes, & &1.note) == [:C, :E, :G, :E]
@@ -47,7 +47,7 @@ defmodule ArpeggioTest do
     test "converts down_up pattern to notes" do
       chord = Chord.new(:C, :major, 4, 1)
       arpeggio = Arpeggio.new(chord, :down_up, 4)
-      notes = Arpeggio.to_notes(arpeggio)
+      notes = Sonority.to_notes(arpeggio)
 
       assert length(notes) == 4
       assert Enum.map(notes, & &1.note) == [:G, :E, :C, :E]
@@ -58,7 +58,7 @@ defmodule ArpeggioTest do
     test "converts explicit pattern to notes" do
       chord = Chord.new(:C, :major, 4, 1)
       arpeggio = Arpeggio.new(chord, [2, 1, 3], 4)
-      notes = Arpeggio.to_notes(arpeggio)
+      notes = Sonority.to_notes(arpeggio)
 
       assert length(notes) == 3
       assert Enum.map(notes, & &1.note) ==  [:E, :C, :G]

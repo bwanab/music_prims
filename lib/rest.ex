@@ -28,5 +28,8 @@ defmodule Rest do
       "r#{rest.duration}"
     end
 
-  end
+    def to_notes(r) do
+      r
+    end
+ end
 end

@@ -277,31 +277,6 @@ defmodule Chord do
     Note.enharmonic_equal?({chord.root, octave}, {note, octave})
   end
 
-  def to_notes(chord) do
-    # Start with base notes
-    base_notes = chord.notes || []
-
-    # Apply omissions if any
-    notes_after_omissions = if chord.omissions do
-      indices_to_remove = MapSet.new(chord.omissions)
-      Enum.with_index(base_notes)
-      |> Enum.reject(fn {_, idx} -> idx in indices_to_remove end)
-      |> Enum.map(fn {note, _} -> note end)
-    else
-      base_notes
-    end
-
-    # Add additions if any
-    notes_with_additions = if chord.additions do
-      notes_after_omissions ++ chord.additions
-    else
-      notes_after_omissions
-    end
-
-    # Handle bass note if specified (would need to ensure it's at the bottom)
-    # For simplicity, we're not implementing this logic fully
-    Enum.map(notes_with_additions, fn n -> Note.copy(n, duration: chord.duration, velocity: n.velocity) end)
-  end
 
   # Implement the Sonority protocol
   defimpl Sonority do
@@ -313,9 +288,36 @@ defmodule Chord do
     """
     @spec show(Chord.t(), keyword()) :: String.t()
     def show(chord, _opts \\ []) do
-      s = Enum.map(Chord.to_notes(chord), fn n -> Sonority.show(n, no_dur: true) end) |> Enum.join(" ")
+      s = Enum.map(Sonority.to_notes(chord), fn n -> Sonority.show(n, no_dur: true) end) |> Enum.join(" ")
       "< #{s} >#{chord.duration}"
     end
+
+    def to_notes(chord) do
+      # Start with base notes
+      base_notes = chord.notes || []
+
+      # Apply omissions if any
+      notes_after_omissions = if chord.omissions do
+        indices_to_remove = MapSet.new(chord.omissions)
+        Enum.with_index(base_notes)
+        |> Enum.reject(fn {_, idx} -> idx in indices_to_remove end)
+        |> Enum.map(fn {note, _} -> note end)
+      else
+        base_notes
+      end
+
+      # Add additions if any
+      notes_with_additions = if chord.additions do
+        notes_after_omissions ++ chord.additions
+      else
+        notes_after_omissions
+      end
+
+      # Handle bass note if specified (would need to ensure it's at the bottom)
+      # For simplicity, we're not implementing this logic fully
+      Enum.map(notes_with_additions, fn n -> Note.copy(n, duration: chord.duration, velocity: n.velocity) end)
+    end
+
 
   end
 
@@ -721,7 +723,7 @@ end
   end
 
   def enharmonic_equal?(chord1, chord2) do
-    Enum.all?(Enum.map(Enum.zip(Chord.to_notes(chord1), Chord.to_notes(chord2)),
+    Enum.all?(Enum.map(Enum.zip(Sonority.to_notes(chord1), Sonority.to_notes(chord2)),
               fn {a, b} -> Note.enharmonic_equal?(a, b) end))
   end
 

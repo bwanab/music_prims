@@ -455,5 +455,9 @@ defmodule Note do
         "#{key_str}#{octave_str}#{abs(duration)}#{dot_str}"
       end
     end
+
+    def to_notes(note) do
+      [note]
+    end
   end
 end

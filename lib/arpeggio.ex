@@ -49,28 +49,9 @@ defmodule Arpeggio do
     %Arpeggio{chord: chord, pattern: pattern, duration: duration}
   end
 
-  def to_notes(arpeggio) when is_list(arpeggio.pattern) do
-    to_notes(arpeggio, arpeggio.pattern)
-  end
-
-  def to_notes(arpeggio) when is_atom(arpeggio.pattern) do
-    length = arpeggio.chord.notes |> length
-    pattern = case arpeggio.pattern do
-      :up -> Enum.to_list(1..length)
-      :down -> Enum.to_list(length..1//-1)
-      :up_down -> Enum.to_list(1..length) ++ Enum.to_list(length-1..2//-1)
-      :down_up -> Enum.to_list(length..1//-1) ++ Enum.to_list(2..length-1//-1)
-    end
-    to_notes(arpeggio, pattern)
-  end
-
-  defp to_notes(arpeggio, pattern) do
-    notes = Chord.to_notes(arpeggio.chord) |> Enum.map(fn n -> Note.copy(n, duration: arpeggio.duration) end)
-    Enum.map(pattern, fn p -> Enum.at(notes, p - 1) end)
-  end
 
   def repeat(arpeggio, times) do
-    Enum.reduce(1..times, [], fn _n,l -> l ++ Arpeggio.to_notes(arpeggio) end)
+    Enum.reduce(1..times, [], fn _n,l -> l ++ Sonority.to_notes(arpeggio) end)
   end
 
   defimpl Sonority do
@@ -79,7 +60,27 @@ defmodule Arpeggio do
 
     @spec show(Arpeggio.t(), keyword()) :: String.t()
     def show(arpeggio, _opts \\ []) do
-      Enum.map(Arpeggio.to_notes(arpeggio), fn n -> Sonority.show(n) end) |> Enum.join(" ")
+      Enum.map(Sonority.to_notes(arpeggio), fn n -> Sonority.show(n) end) |> Enum.join(" ")
+    end
+
+    def to_notes(arpeggio) when is_list(arpeggio.pattern) do
+      to_notes(arpeggio, arpeggio.pattern)
+    end
+
+    def to_notes(arpeggio) when is_atom(arpeggio.pattern) do
+      length = arpeggio.chord.notes |> length
+      pattern = case arpeggio.pattern do
+                  :up -> Enum.to_list(1..length)
+                  :down -> Enum.to_list(length..1//-1)
+                  :up_down -> Enum.to_list(1..length) ++ Enum.to_list(length-1..2//-1)
+                  :down_up -> Enum.to_list(length..1//-1) ++ Enum.to_list(2..length-1//-1)
+                end
+      to_notes(arpeggio, pattern)
+    end
+
+    defp to_notes(arpeggio, pattern) do
+      notes = Sonority.to_notes(arpeggio.chord) |> Enum.map(fn n -> Note.copy(n, duration: arpeggio.duration) end)
+      Enum.map(pattern, fn p -> Enum.at(notes, p - 1) end)
     end
 
   end

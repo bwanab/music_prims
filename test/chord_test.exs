@@ -268,13 +268,13 @@ defmodule ChordTest do
   test "with_additions adds notes to the chord" do
     chord = Chord.new(:C, :major)
     |> Chord.with_additions([Note.new(:D, 4)])
-    assert length(Chord.to_notes(chord)) == 4
+    assert length(Sonority.to_notes(chord)) == 4
   end
 
   test "with_omissions removes notes from the chord" do
     chord = Chord.new(:C, :major, 0, 2)
-    |> Chord.with_omissions([5])
-    assert length(Chord.to_notes(chord)) == 2
+    |> Chord.with_omissions([2])
+    assert length(Sonority.to_notes(chord)) == 2
   end
   describe "Chord.get_standard_notes/3" do
     test "returns correct notes for major chord" do

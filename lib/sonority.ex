@@ -27,6 +27,8 @@ defprotocol Sonority do
   @spec show(t(), Keyword.t()) :: String.t()
   def show(s, opts \\ [])
 
+  @spec to_notes(t()) :: [Sonority.t()]
+  def to_notes(s)
 
   @doc """
   Gets the type of a Sonority.
