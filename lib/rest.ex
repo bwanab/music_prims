@@ -29,7 +29,7 @@ defmodule Rest do
     end
 
     def to_notes(r) do
-      r
+      [r]
     end
  end
 end
