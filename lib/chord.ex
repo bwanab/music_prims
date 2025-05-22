@@ -511,7 +511,7 @@ defmodule Chord do
   def roman_numeral_to_midi(sym, chord) do
     roman_numeral_to_chord(sym, chord)
     |> chord_to_notes
-    |> Note.to_midi
+    |> MidiNote.to_midi
   end
 
   @spec roman_numerals_to_midi([atom], chord_sym) :: [[integer]]
@@ -633,7 +633,7 @@ defmodule Chord do
   end
 
 def get_intervals(notes) do
-  note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
+  note_nums = Enum.map(notes, &MidiNote.note_to_midi(&1).note_number)
   min = Enum.min(note_nums)
   Enum.with_index(Enum.map(note_nums, &(&1 - min)))
   |> Enum.sort()
@@ -641,7 +641,7 @@ end
 
 def get_matches(notes) do
   get_note_nums = fn notes ->
-    note_nums = Enum.map(notes, &Note.note_to_midi(&1).note_number)
+    note_nums = Enum.map(notes, &MidiNote.note_to_midi(&1).note_number)
     min = Enum.min(note_nums)
     Enum.map(note_nums, &(&1 - min))
   end
@@ -677,7 +677,7 @@ end
     matches = if length(matches) == 0 do
       # here we say there's no direct rotation of the notes as given, but we will sort them
       # and see if there's a rotation that works.
-      note_nums = Enum.map(notes, fn note -> Note.note_to_midi(note) end)
+      note_nums = Enum.map(notes, fn note -> MidiNote.note_to_midi(note) end)
       sorted_notes = Enum.zip(note_nums, notes) |> Enum.sort |> Enum.map(fn {_, n} -> n end)
       get_matches(sorted_notes)
     else

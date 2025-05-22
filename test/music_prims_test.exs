@@ -3,7 +3,6 @@ defmodule MusicPrimsTest do
   import MusicPrims
   import Chord
   import Scale
-  import Note
   doctest MusicPrims
 
   # Helper function to normalize output for test assertions
@@ -78,9 +77,9 @@ defmodule MusicPrimsTest do
     end
 
     test "midi conversions" do
-      assert major_scale(:C) |> Note.to_midi == [12, 14, 16, 17, 19, 21, 23]
-      assert major_seventh_chord(:F) |> Note.to_midi == [17, 21, 24, 28]
-      assert major_seventh_chord(:F) |> third_inversion |> Note.to_midi == [28, 29, 33, 36]
+      assert major_scale(:C) |> MidiNote.to_midi == [12, 14, 16, 17, 19, 21, 23]
+      assert major_seventh_chord(:F) |> MidiNote.to_midi == [17, 21, 24, 28]
+      assert major_seventh_chord(:F) |> third_inversion |> MidiNote.to_midi == [28, 29, 33, 36]
     end
 
     test "octave_up on all notes" do
@@ -116,7 +115,7 @@ defmodule MusicPrimsTest do
 
     test "scale tests chord sequence reification and to midi" do
       result = Enum.map(roman_numerals_to_chords([:I, :IV, :vi, :V], :G, 0, :major), &(chord_to_notes(&1)))
-      |> Enum.map(&(to_midi(&1)))
+      |> Enum.map(&(MidiNote.to_midi(&1)))
       assert result == [
         [19, 23, 26],  # G major chord
         [12, 16, 19],  # C major chord

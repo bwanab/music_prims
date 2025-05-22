@@ -91,14 +91,6 @@ defmodule Note do
   def key_from_note(%__MODULE__{note: key}), do: key
 
 
-  @doc """
-  Convert a note or list of notes to MIDI value(s).
-  """
-  @spec to_midi(t() | [t()]) :: integer() | [integer()]
-  def to_midi(%__MODULE__{note: key, octave: octave}) do
-    @midi_notes_map[key] + (octave * 12)
-  end
-  def to_midi(notes) when is_list(notes), do: Enum.map(notes, &to_midi/1)
 
   @doc """
   Get the next note in the circle of fifths.
@@ -281,47 +273,21 @@ defmodule Note do
   @spec enharmonic_equal?(t | {atom, integer} | atom, t | {atom, integer} | atom) :: boolean
   def enharmonic_equal?(note1, note2) do
     midi1 = case note1 do
-      %Note{} -> to_midi(note1)
-      {key, octave} -> to_midi(new(key, octave))
-      _ -> to_midi(new(note1, 3))
+      %Note{} -> MidiNote.to_midi(note1)
+      {key, octave} -> MidiNote.to_midi(new(key, octave))
+      _ -> MidiNote.to_midi(new(note1, 3))
     end
 
     midi2 = case note2 do
-      %Note{} -> to_midi(note2)
-      {key, octave} -> to_midi(new(key, octave))
-      _ -> to_midi(new(note2, 3))
+      %Note{} -> MidiNote.to_midi(note2)
+      {key, octave} -> MidiNote.to_midi(new(key, octave))
+      _ -> MidiNote.to_midi(new(note2, 3))
     end
 
     midi1 == midi2
   end
 
-  @doc """
-  Convert a note to its MIDI note number, duration, and velocity.
-  """
-  @spec note_to_midi(t) :: %{note_number: integer, duration: number | nil, velocity: integer}
-  def note_to_midi(%Note{note: key, octave: octave, duration: duration, velocity: velocity}) do
-    midi_duration = case duration do
-      0 -> 0.0
-      _ -> 4.0 / duration
-    end
-    midi_duration = if midi_duration < 0, do: abs(midi_duration) * 1.5, else: midi_duration
-    %{
-      note_number: @midi_notes_map[key] + (octave * 12),
-      duration: midi_duration,
-      velocity: velocity || 100
-    }
-  end
 
-  @doc """
-  Convert a MIDI note number to a Note struct.
-  """
-  @spec midi_to_note(integer, number | nil, integer | nil) :: t
-  def midi_to_note(note_number, duration \\ 1, velocity \\ 100) do
-    octave = div(note_number - 12, 12)
-    key_index = rem(note_number - 12, 12)
-    key = Enum.at(@notes, key_index)
-    new(key, octave, duration, velocity)
-  end
 
   @doc """
   Create a rest note with the given duration.
@@ -402,7 +368,7 @@ defmodule Note do
   @spec note_distance(Note.t(), Note.t()) :: integer
   def note_distance(n1, n2) do
     v =
-      Stream.iterate(abs(to_midi(n1) - to_midi(n2)), &(&1 - 12))
+      Stream.iterate(abs(MidiNote.to_midi(n1) - MidiNote.to_midi(n2)), &(&1 - 12))
       |> Stream.drop_while(&(&1 > 12))
       |> Enum.take(1)
       |> List.first
