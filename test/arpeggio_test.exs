@@ -39,8 +39,8 @@ defmodule ArpeggioTest do
       arpeggio = Arpeggio.new(chord, :up_down, 4)
       notes = Sonority.to_notes(arpeggio)
 
-      assert length(notes) == 4
-      assert Enum.map(notes, & &1.note) == [:C, :E, :G, :E]
+      assert length(notes) == 5
+      assert Enum.map(notes, & &1.note) == [:C, :E, :G, :E, :C]
       assert Enum.all?(notes, & &1.duration == 4)
     end
 
@@ -49,8 +49,8 @@ defmodule ArpeggioTest do
       arpeggio = Arpeggio.new(chord, :down_up, 4)
       notes = Sonority.to_notes(arpeggio)
 
-      assert length(notes) == 4
-      assert Enum.map(notes, & &1.note) == [:G, :E, :C, :E]
+      assert length(notes) == 5
+      assert Enum.map(notes, & &1.note) == [:G, :E, :C, :E, :G]
       assert Enum.all?(notes, & &1.octave == 4)
       assert Enum.all?(notes, & &1.duration == 4)
     end

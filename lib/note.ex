@@ -87,13 +87,9 @@ defmodule Note do
   Get the key from a note.
   """
   @spec key_from_note(t()) :: atom()
-  def key_from_note(%__MODULE__{note: {key, _}}), do: key
+  def key_from_note(n) when is_atom(n), do: n
+  def key_from_note(%__MODULE__{note: key}), do: key
 
-  @doc """
-  Get the octave from a note.
-  """
-  @spec octave_from_note(t()) :: integer()
-  def octave_from_note(%__MODULE__{note: {_, octave}}), do: octave
 
   @doc """
   Convert a note or list of notes to MIDI value(s).
@@ -183,8 +179,7 @@ defmodule Note do
   Get the next note in the given circle.
   """
   @spec next_nth(t(), [atom()]) :: t()
-  def next_nth(%__MODULE__{} = note, circle) do
-    {key, octave} = note.note
+  def next_nth(%__MODULE__{note: key, octave: octave} = note, circle) do
     idx = Enum.find_index(circle, &(&1 == key))
     next_key = case idx do
       nil -> {key, octave}
@@ -321,7 +316,7 @@ defmodule Note do
   Convert a MIDI note number to a Note struct.
   """
   @spec midi_to_note(integer, number | nil, integer | nil) :: t
-  def midi_to_note(note_number, duration \\ 4, velocity \\ 100) do
+  def midi_to_note(note_number, duration \\ 1, velocity \\ 100) do
     octave = div(note_number - 12, 12)
     key_index = rem(note_number - 12, 12)
     key = Enum.at(@notes, key_index)

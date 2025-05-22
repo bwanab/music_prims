@@ -188,8 +188,8 @@ defmodule Scale do
   end
 
   defp map_by_flat_key(nk) do
-    if MapSet.member?(MapSet.new(@flats), key_from_note(nk)) do
-      new_key = Map.get(@sharp_key_map, key_from_note(nk))
+    if MapSet.member?(MapSet.new(@flats), Note.key_from_note(nk)) do
+      new_key = Map.get(@sharp_key_map, Note.key_from_note(nk))
       if is_tuple(nk), do: Note.new(new_key, elem(nk, 1)), else: new_key
     else
       nk
@@ -197,7 +197,7 @@ defmodule Scale do
   end
 
   # defp map_by_key(seq, key) do
-  #   if MapSet.member?(MapSet.new(@normal_flat), key_from_note(key)) do
+  #   if MapSet.member?(MapSet.new(@normal_flat), Note.key_from_note(key)) do
   #     Enum.map(seq, &map_by_sharp_key/1)
   #   else
   #     Enum.map(seq, &map_by_flat_key/1)
@@ -211,8 +211,8 @@ defmodule Scale do
   # end
   # defp map_by_sharp_key(nk, context) do
   #   key_map = if context == :normal, do: @normal_flat_key_map, else: @flat_key_map
-  #   k = case Map.get(key_map, key_from_note(nk)) do
-  #     nil -> key_from_note(nk)
+  #   k = case Map.get(key_map, Note.key_from_note(nk)) do
+  #     nil -> Note.key_from_note(nk)
   #     val -> val
   #   end
   #   if is_tuple(nk), do: Note.new(k, elem(nk, 1)), else: k
@@ -248,8 +248,6 @@ defmodule Scale do
     Enum.map(scale_notes(scale), fn {_note, midi} -> midi end)
   end
 
-  defp key_from_note(n) when is_atom(n), do: n
-  defp key_from_note(%Note{note: key}), do: key
 
   def enharmonic_equal?(scale1, scale2) do
     Enum.all?(Enum.map(Enum.zip(scale1, scale2),

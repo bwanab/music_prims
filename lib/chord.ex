@@ -741,4 +741,10 @@ end
               fn {a, b} -> Note.enharmonic_equal?(a, b) end))
   end
 
+  def root_note(%__MODULE__{inversion: inversion, notes: notes} = chord) do
+    index = if inversion == 0, do: 0, else: length(notes) - inversion
+    Enum.at(Sonority.to_notes(chord), index)
+   end
+
+
 end

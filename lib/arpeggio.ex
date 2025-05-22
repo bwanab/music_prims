@@ -73,7 +73,7 @@ defmodule Arpeggio do
                   :up -> Enum.to_list(1..length)
                   :down -> Enum.to_list(length..1//-1)
                   :up_down -> Enum.to_list(1..length) ++ Enum.to_list(length-1..1//-1)
-                  :down_up -> Enum.to_list(length..1//-1) ++ Enum.to_list(1..length-1//-1)
+                  :down_up -> Enum.to_list(length..1//-1) ++ Enum.to_list(2..length)
                 end
       to_notes(arpeggio, pattern)
     end
