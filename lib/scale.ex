@@ -12,7 +12,9 @@ defmodule Scale do
   @modes [major: 0, dorian: 1, phrygian: 2, lydian: 3, mixolodian: 4, minor: 5, locrian: 6]
 
   # Circle of fifths and key mapping
+  @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
   @circle_of_fifths [:C, :G, :D, :A, :E, :B, :F!, :C!, :G!, :D!, :A!, :F]
+  @circle_of_fourths Enum.reverse(@circle_of_fifths)
   @flat_circle_of_fifths [:C, :G, :D, :A, :E, :B, :Gb, :Db, :Ab, :Eb, :Bb, :F]
   @normal_flat [:G!, :D!, :A!, :F, :Gb, :Db, :Ab, :Eb, :Bb]
   @flats [:Gb, :Db, :Ab, :Eb, :Bb]
@@ -40,7 +42,7 @@ defmodule Scale do
   @spec chromatic_scale(Note | {atom(), integer()}) :: [Note.t()]
   def chromatic_scale(%Note{} = note) do
     Enum.reduce(0..11, [note], fn _, [last | _] = acc ->
-      next = Note.next_half_step(last)
+      next = next_half_step(last)
       # Map sharp notes to flat notes where appropriate
       mapped_note = case {next.note, next.octave} do
         {:D!, o} -> %{next | note: :Eb, octave: o}
@@ -253,5 +255,44 @@ defmodule Scale do
     Enum.all?(Enum.map(Enum.zip(scale1, scale2),
               fn {a, b} -> Note.enharmonic_equal?(a, b) end))
   end
+
+  @doc """
+  Get the next note in the given circle.
+  """
+  @spec next_nth(Note.t(), [atom()]) :: Note.t()
+  def next_nth(%Note{note: key, octave: octave} = note, circle) do
+    idx = Enum.find_index(circle, &(Note.enharmonic_equal?(key, &1)))
+    {next_key, octave} = case idx do
+      nil -> {key, octave}
+      ^idx when idx == length(circle) - 1 -> {Enum.at(circle, 0), octave + 1}
+      ^idx -> {Enum.at(circle, idx + 1), octave}
+    end
+    %{note | note: next_key, octave: octave}
+  end
+
+  @doc """
+  Get the next note in the circle of fifths.
+  """
+  @spec next_fifth(Note.t()) :: Note.t()
+  def next_fifth(note) do
+    next_nth(note, @circle_of_fifths)
+  end
+
+  @doc """
+  Get the next note in the circle of fourths.
+  """
+  @spec next_fourth(Note.t()) :: Note.t()
+  def next_fourth(note) do
+    next_nth(note, @circle_of_fourths)
+  end
+
+  @doc """
+  Get the next note in the circle of fourths.
+  """
+  @spec next_half_step(Note.t()) :: Note.t()
+  def next_half_step(note) do
+    next_nth(note, @notes)
+  end
+
 
 end

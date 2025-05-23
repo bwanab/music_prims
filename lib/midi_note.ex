@@ -14,6 +14,13 @@ defmodule MidiNote do
   @midi_notes_map Enum.into(@midi_notes, %{})
 
   @doc """
+  Get the MIDI note map
+  """
+  @spec note_map(atom()) :: integer()
+  def note_map(note), do: @midi_notes_map[note]
+
+
+  @doc """
   Convert a note to its MIDI note number, duration, and velocity.
   """
   @spec note_to_midi(Note.t) :: t
