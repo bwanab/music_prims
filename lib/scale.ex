@@ -23,6 +23,10 @@ defmodule Scale do
   # @normal_flat_key_map @flat_key_map |> Map.merge(%{:F! => :F!, :C! => :C!})
   @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
+  def new(key, quality \\ :major, octave \\ 3) do
+    build_note_seq(key, @major_intervals |> rotate_zero(@modes[quality]), octave)
+  end
+
   def normal_flat_set() do
     @normal_flat |> MapSet.new()
   end
