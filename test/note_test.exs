@@ -158,6 +158,12 @@ defmodule NoteTest do
       assert midi.duration == 1.0
       assert midi.velocity == 100
     end
+
+    test "sanity of midi_note conversion" do
+      note = Note.new(:C, 8, 4, 100)
+      midi = MidiNote.note_to_midi(note)
+      assert MidiNote.midi_to_note(midi) == note
+    end
   end
 
   describe "Note.enharmonic_equal?/2" do

@@ -3,7 +3,14 @@ defmodule MidiNote do
   Module for handling MIDI note representations and conversions.
   """
 
-  @type t :: %{note_number: integer, duration: number | nil, velocity: integer}
+  @type t :: %__MODULE__{
+    note_number: integer,
+    duration: number | nil,
+    velocity: integer
+  }
+
+  defstruct [:note_number, :duration,  :velocity]
+
 
   # Notes and MIDI mapping - reused from Note module
   @notes [:C, :C!, :D, :D!, :E, :F, :F!, :G, :G!, :A, :A!, :B]
@@ -30,7 +37,7 @@ defmodule MidiNote do
       _ -> 4.0 / duration
     end
     midi_duration = if midi_duration < 0, do: abs(midi_duration) * 1.5, else: midi_duration
-    %{
+    %__MODULE__{
       note_number: @midi_notes_map[key] + (octave * 12),
       duration: midi_duration,
       velocity: velocity || 100
@@ -45,6 +52,12 @@ defmodule MidiNote do
         within_percent?(number_of_quarter_notes, 3, 0.05) -> -2
         true -> closest_power_of_two(floor(4 / number_of_quarter_notes))
     end
+  end
+
+
+
+  def midi_to_note(%__MODULE__{note_number: note_number, duration: duration, velocity: velocity}) do
+    midi_to_note(note_number, duration, velocity)
   end
 
   @doc """
