@@ -37,11 +37,22 @@ defmodule MidiNote do
     }
   end
 
+  def get_duration(number_of_quarter_notes) do
+    cond do
+        within_percent?(number_of_quarter_notes, 0.375, 0.05) -> -16
+        within_percent?(number_of_quarter_notes, 0.75, 0.05) -> -8
+        within_percent?(number_of_quarter_notes, 1.5, 0.05) -> -4
+        within_percent?(number_of_quarter_notes, 3, 0.05) -> -2
+        true -> closest_power_of_two(floor(4 / number_of_quarter_notes))
+    end
+  end
+
   @doc """
   Convert a MIDI note number to a Note struct.
   """
   @spec midi_to_note(integer, number | nil, integer | nil) :: Note.t
-  def midi_to_note(note_number, duration \\ 1, velocity \\ 100) do
+  def midi_to_note(note_number, number_of_quarter_notes, velocity \\ 100) do
+    duration = get_duration(number_of_quarter_notes)
     octave = div(note_number - 12, 12)
     key_index = rem(note_number - 12, 12)
     key = Enum.at(@notes, key_index)
@@ -56,4 +67,21 @@ defmodule MidiNote do
     @midi_notes_map[key] + (octave * 12)
   end
   def to_midi(notes) when is_list(notes), do: Enum.map(notes, &to_midi/1)
+
+  def closest_power_of_two(num) when is_number(num) and num > 0 do
+    # Calculate the power using logarithm base 2
+    power = :math.log2(num) |> round()
+
+    # Return 2 raised to that power
+    :math.pow(2, power) |> round()
+  end
+
+  def within_percent?(number, target, percent) when is_number(number) and is_number(target) and is_number(percent) do
+    lower_bound = target * (1 - percent)
+    upper_bound = target * (1 + percent)
+
+    number >= lower_bound and number <= upper_bound
+  end
+
+
 end

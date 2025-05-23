@@ -78,7 +78,7 @@ defmodule NoteTest do
 
   describe "MidiNote.midi_to_note/3" do
     test "converts middle C (MIDI 60) to Note struct" do
-      note = MidiNote.midi_to_note(60, 4, 100)
+      note = MidiNote.midi_to_note(60, 1, 100)
       assert note.note == :C
       assert note.octave == 4
       assert note.duration == 4
@@ -94,7 +94,7 @@ defmodule NoteTest do
     end
 
     test "converts MIDI note 61 to C#4" do
-      note = MidiNote.midi_to_note(61, 8, 90)
+      note = MidiNote.midi_to_note(61, 0.5, 90)
       assert note.note == :C!
       assert note.octave == 4
       assert note.duration == 8
@@ -102,7 +102,7 @@ defmodule NoteTest do
     end
 
     test "converts MIDI note 21 to A0 (lowest piano note)" do
-      note = MidiNote.midi_to_note(21, 4, 100)
+      note = MidiNote.midi_to_note(21, 1, 100)
       assert note.note == :A
       assert note.octave == 0
       assert note.duration == 4
@@ -110,7 +110,7 @@ defmodule NoteTest do
     end
 
     test "converts MIDI note 108 to C8 (high piano note)" do
-      note = MidiNote.midi_to_note(108, 4, 100)
+      note = MidiNote.midi_to_note(108, 1, 100)
       assert note.note == :C
       assert note.octave == 8
       assert note.duration == 4
