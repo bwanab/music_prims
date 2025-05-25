@@ -5,9 +5,9 @@ defmodule ChordTest do
   describe "Chord.new/2 from notes" do
     test "creates a chord from a list of notes" do
       notes = [
-        Note.new(:C, 4),
-        Note.new(:E, 4),
-        Note.new(:G, 4)
+        Note.new(:C, 4, 4),
+        Note.new(:E, 4, 4),
+        Note.new(:G, 4, 4)
       ]
       chord = Chord.new(notes, 4)
       assert chord.notes == notes
@@ -255,7 +255,7 @@ defmodule ChordTest do
 
     test "show returns Lilypond representation" do
       chord = Chord.new(:C, :major, 4, 4)
-      assert Sonority.show(chord) == "< c' e' g' >4"
+      assert Sonority.show(chord) == "< c' e' g' >1"
     end
   end
 

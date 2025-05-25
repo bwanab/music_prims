@@ -7,7 +7,7 @@ defmodule NoteTest do
       note = Note.new(:C, 4)
       assert note.note == :C
       assert note.octave == 4
-      assert note.duration == 4
+      assert note.duration == 1
       assert note.velocity == 100
     end
 
@@ -47,7 +47,7 @@ defmodule NoteTest do
 
     test "formats a quarter note (duration 4)" do
       note = Note.new(:C, 4, 4)
-      assert Sonority.show(note) == "c'4"
+      assert Sonority.show(note) == "c'1"
     end
 
     test "formats a half note (duration 2)" do
@@ -56,22 +56,22 @@ defmodule NoteTest do
     end
 
     test "formats an eighth note (duration 8)" do
-      note = Note.new(:G, 3, 8)
+      note = Note.new(:G, 3, 0.5)
       assert Sonority.show(note) == "g8"
     end
 
     test "formats a sixteenth note (duration 16)" do
-      note = Note.new(:A, 5, 16)
+      note = Note.new(:A, 5, 0.25)
       assert Sonority.show(note) == "a''16"
     end
 
     test "formats a whole note (duration 1)" do
-      note = Note.new(:E, 2, 1)
+      note = Note.new(:E, 2, 4)
       assert Sonority.show(note) == "e,1"
     end
 
     test "formats a dotted quarter note" do
-      note = Note.new(:F, 4, -4, 100)
+      note = Note.new(:F, 4, 1.5, 100)
       assert Sonority.show(note) == "f'4."
     end
   end
@@ -81,7 +81,7 @@ defmodule NoteTest do
       note = MidiNote.midi_to_note(60, 1, 100)
       assert note.note == :C
       assert note.octave == 4
-      assert note.duration == 4
+      assert note.duration == 1
       assert note.velocity == 100
     end
 
@@ -97,7 +97,7 @@ defmodule NoteTest do
       note = MidiNote.midi_to_note(61, 0.5, 90)
       assert note.note == :C!
       assert note.octave == 4
-      assert note.duration == 8
+      assert note.duration == 0.5
       assert note.velocity == 90
     end
 
@@ -105,7 +105,7 @@ defmodule NoteTest do
       note = MidiNote.midi_to_note(21, 1, 100)
       assert note.note == :A
       assert note.octave == 0
-      assert note.duration == 4
+      assert note.duration == 1
       assert note.velocity == 100
     end
 
@@ -113,7 +113,7 @@ defmodule NoteTest do
       note = MidiNote.midi_to_note(108, 1, 100)
       assert note.note == :C
       assert note.octave == 8
-      assert note.duration == 4
+      assert note.duration == 1
       assert note.velocity == 100
     end
   end
@@ -123,7 +123,7 @@ defmodule NoteTest do
       note = Note.new(:C, 4, 4, 100)
       midi = MidiNote.note_to_midi(note)
       assert midi.note_number == 60
-      assert midi.duration == 1.0
+      assert midi.duration == 4
       assert midi.velocity == 100
     end
 
@@ -139,7 +139,7 @@ defmodule NoteTest do
       note = Note.new(:C!, 4, 8, 90)
       midi = MidiNote.note_to_midi(note)
       assert midi.note_number == 61
-      assert midi.duration == 0.5
+      assert midi.duration == 8
       assert midi.velocity == 90
     end
 
@@ -147,7 +147,7 @@ defmodule NoteTest do
       note = Note.new(:A, 0, 4, 100)
       midi = MidiNote.note_to_midi(note)
       assert midi.note_number == 21
-      assert midi.duration == 1.0
+      assert midi.duration == 4
       assert midi.velocity == 100
     end
 
@@ -155,7 +155,7 @@ defmodule NoteTest do
       note = Note.new(:C, 8, 4, 100)
       midi = MidiNote.note_to_midi(note)
       assert midi.note_number == 108
-      assert midi.duration == 1.0
+      assert midi.duration == 4
       assert midi.velocity == 100
     end
 
@@ -164,6 +164,65 @@ defmodule NoteTest do
       midi = MidiNote.note_to_midi(note)
       assert MidiNote.midi_to_note(midi) == note
     end
+  end
+
+  describe "MidiNote.get_lily_duration/2" do
+    test "plain half note" do
+      note = Note.new(:C, 3, 2)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "2"
+    end
+    test "plain whole note" do
+      note = Note.new(:C, 3, 4)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "1"
+    end
+    test "plain quarter note" do
+      note = Note.new(:C, 3, 1)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "4"
+    end
+    test "plain eighth note" do
+      note = Note.new(:C, 3, 0.5)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "8"
+    end
+    test "dotted half note" do
+      note = Note.new(:C, 3, 3)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "2."
+    end
+    test "dotted quarter note" do
+      note = Note.new(:C, 3, 1.5)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "4."
+    end
+    test "dotted eighth note" do
+      note = Note.new(:C, 3, 0.75)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "8."
+    end
+    test "dotted 16th note" do
+      note = Note.new(:C, 3, 0.375)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "16."
+    end
+    test "long plain note remainder" do
+      note = Note.new(:C, 3, 9)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "4*9"
+    end
+    test "long plain note no remainder" do
+      note = Note.new(:C, 3, 12)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "1*3"
+    end
+    test "long dotted note" do
+      note = Note.new(:C, 3, 9.5)
+      lily = MidiNote.get_lily_duration(Sonority.duration(note), 4)
+      assert lily == "8*19"
+    end
+
   end
 
   describe "Note.enharmonic_equal?/2" do

@@ -11,7 +11,7 @@ defmodule Chord do
     root: MusicPrims.key() | nil,
     quality: atom() | nil,
     notes: [Note.t()] | nil,
-    duration: integer(),
+    duration: number(),
     bass_note: Note.t() | nil,
     additions: [Note.t()] | nil,
     omissions: [integer()] | nil,
@@ -118,8 +118,8 @@ defmodule Chord do
   ## Returns
     * A new Chord struct
   """
-  @spec new(atom(), atom(), integer(), integer(), integer()) :: Sonority.t()
-  def new(key, quality, octave \\ 3, duration \\ 4, inversion \\ 0) do
+  @spec new(atom(), atom(), integer(), number(), integer()) :: Sonority.t()
+  def new(key, quality, octave \\ 3, duration \\ 1.0, inversion \\ 0) do
     notes = get_standard_notes(key, quality, octave)
 
     # Apply inversion if needed
@@ -303,7 +303,7 @@ defmodule Chord do
     @spec show(Chord.t(), keyword()) :: String.t()
     def show(chord, _opts \\ []) do
       s = Enum.map(Sonority.to_notes(chord), fn n -> Sonority.show(n, no_dur: true) end) |> Enum.join(" ")
-      "< #{s} >#{chord.duration}"
+      "< #{s} >#{MidiNote.get_lily_duration(chord.duration)}"
     end
 
     def to_notes(chord) do

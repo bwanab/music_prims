@@ -18,7 +18,7 @@ defprotocol Sonority do
 
   Dealing with these will be at a later iteration.
 """
-  @spec duration(t()) :: integer()
+  @spec duration(t()) :: number()
   def duration(s)
 
   @spec type(t()) :: atom()

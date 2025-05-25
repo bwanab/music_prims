@@ -24,7 +24,7 @@ defmodule Arpeggio do
   @type t :: %__MODULE__{
     chord: Chord.t(),
     pattern: pattern(),
-    duration: integer()
+    duration: number()
   }
 
   defstruct [:chord, :pattern, :duration]

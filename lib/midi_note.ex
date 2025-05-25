@@ -32,25 +32,47 @@ defmodule MidiNote do
   """
   @spec note_to_midi(Note.t) :: t
   def note_to_midi(%Note{note: key, octave: octave, duration: duration, velocity: velocity}) do
-    midi_duration = case duration do
-      0 -> 0.0
-      _ -> 4.0 / duration
-    end
-    midi_duration = if midi_duration < 0, do: abs(midi_duration) * 1.5, else: midi_duration
     %__MODULE__{
       note_number: @midi_notes_map[key] + (octave * 12),
-      duration: midi_duration,
+      duration: duration,
       velocity: velocity || 100
     }
   end
 
   def get_duration(number_of_quarter_notes) do
     cond do
+        number_of_quarter_notes == 0 -> 0
+        number_of_quarter_notes == 4 -> 1
         within_percent?(number_of_quarter_notes, 0.375, 0.05) -> -16
         within_percent?(number_of_quarter_notes, 0.75, 0.05) -> -8
         within_percent?(number_of_quarter_notes, 1.5, 0.05) -> -4
         within_percent?(number_of_quarter_notes, 3, 0.05) -> -2
         true -> closest_power_of_two(floor(4 / number_of_quarter_notes))
+    end
+  end
+
+  def get_lily_duration(num_quarter_notes, time_sig_denominator \\ 4) do
+    num_whole_notes = floor(num_quarter_notes / time_sig_denominator)
+    rem = num_quarter_notes - time_sig_denominator * num_whole_notes
+    rem_dur = get_duration(rem)
+    cond do
+      num_whole_notes == 0 ->
+        if rem_dur < 0 do
+          "#{floor(-rem_dur)}."
+        else
+          "#{floor(rem_dur)}"
+        end
+      true ->
+        cond do
+          rem_dur < 0 ->
+            "#{floor(time_sig_denominator * 2)}*#{floor(num_quarter_notes * 2)}"
+          rem_dur == 0 and num_whole_notes == 1 ->
+            "1"
+          rem_dur == 0 ->
+            "1*#{num_whole_notes}"
+          true ->
+            "#{time_sig_denominator}*#{floor(num_quarter_notes)}"
+        end
     end
   end
 
@@ -65,11 +87,10 @@ defmodule MidiNote do
   """
   @spec midi_to_note(integer, number | nil, integer | nil) :: Note.t
   def midi_to_note(note_number, number_of_quarter_notes, velocity \\ 100) do
-    duration = get_duration(number_of_quarter_notes)
     octave = div(note_number - 12, 12)
     key_index = rem(note_number - 12, 12)
     key = Enum.at(@notes, key_index)
-    Note.new(key, octave, duration, velocity)
+    Note.new(key, octave, number_of_quarter_notes, velocity)
   end
 
   @doc """

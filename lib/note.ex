@@ -7,7 +7,7 @@ defmodule Note do
   @type t :: %__MODULE__{
     note: atom(),
     octave: integer(),
-    duration: integer(),
+    duration: number(),
     velocity: integer()
   }
 
@@ -25,7 +25,7 @@ defmodule Note do
   # @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
 
-  def new(key, octave \\ 3, duration \\ 4, velocity \\ 100) do
+  def new(key, octave \\ 3, duration \\ 1.0, velocity \\ 100) do
     %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity}
   end
 
@@ -169,8 +169,6 @@ defmodule Note do
         end
       end
 
-      dot_str = if duration < 0, do:  ".", else: ""
-
       octave_str = case octave do
         6 -> "'''"
         5 -> "''"
@@ -185,7 +183,7 @@ defmodule Note do
       if no_dur do
         "#{key_str}#{octave_str}"
       else
-        "#{key_str}#{octave_str}#{abs(duration)}#{dot_str}"
+        "#{key_str}#{octave_str}#{MidiNote.get_lily_duration(duration)}"
       end
     end
 

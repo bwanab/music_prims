@@ -1,11 +1,11 @@
 defmodule Rest do
   @type t :: %__MODULE__{
-      duration: integer(),
+      duration: number(),
   }
 
   defstruct [:duration]
 
-  @spec new(any()) :: Sonority.t()
+  @spec new(number()) :: Sonority.t()
   def new(duration) do
     # Return the struct with specified values
     %__MODULE__{
@@ -14,7 +14,7 @@ defmodule Rest do
   end
 
   def to_midi(rest) do
-    4.0 / rest.duration
+    rest.duration
   end
 
   defimpl Sonority do
@@ -25,7 +25,7 @@ defmodule Rest do
     def type(_) do :rest end
 
     def show(rest, _opts \\ []) do
-      "r#{rest.duration}"
+      "r#{MidiNote.get_lily_duration(rest.duration)}"
     end
 
     def to_notes(r) do
