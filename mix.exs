@@ -5,9 +5,10 @@ defmodule MusicPrims.MixProject do
     [
       app: :music_prims,
       version: "0.1.0",
-      elixir: "~> 1.3",
+      elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: package()
     ]
   end
 
@@ -17,6 +18,14 @@ defmodule MusicPrims.MixProject do
       extra_applications: [:logger]
     ]
   end
+
+  defp package do
+    [
+      licenses: ["MIT"],
+      links: %{"GitHub" => "https://github.com/bwanab/music_build"}
+    ]
+  end
+
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
