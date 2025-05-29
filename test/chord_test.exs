@@ -202,7 +202,7 @@ defmodule ChordTest do
       # Check that notes are in second inversion
       note_structs = chord.notes
       note_names = Enum.map(note_structs, fn %Note{note: key, octave: octave} -> {key, octave} end)
-      assert note_names == [{:A, 3}, {:D, 4}, {:F!, 4}]
+      assert note_names == [{:A, 4}, {:D, 5}, {:F!, 5}]
     end
   end
 

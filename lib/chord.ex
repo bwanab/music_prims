@@ -262,6 +262,26 @@ defmodule Chord do
   end
 
   @doc """
+    returns the note represented by the roman numeral for a given root key
+    that is of the given scale type and octave.
+
+    Example:
+    iex> note = Chord.note_from_roman_numeral(:IV, :A, 2, :major)
+    iex> note.note
+    :D
+    iex> note.octave
+    3
+
+    since :D in the 3rd octave is the 4th major scale note of A in the 2nd octave
+
+  """
+  def note_from_roman_numeral(roman_numeral, key, octave, scale_type) do
+    Chord.roman_numeral_to_chord(roman_numeral, key, octave, scale_type)
+    |> Chord.chord_to_notes()
+    |> Enum.at(0)
+  end
+
+  @doc """
   Checks if the chord's root is enharmonically equal to the specified note or key.
 
   This is useful when working with chord progressions where you need to check for
@@ -467,16 +487,16 @@ defmodule Chord do
       minor_scale(key, octave)
     end
     # Extract just the note names from the scale
-    note_names = scale |> Enum.map(fn
-      %Note{note: n} -> n
-      {n, _o} -> n
-    end)
+    # note_names = scale |> Enum.map(fn
+    #   %Note{note: n} -> n
+    #   {n, _o} -> n
+    # end)
 
     {index, chord_type} = ChordPrims.all_chord_sym_map[sym]
-    chord_key = Enum.at(note_names, index)
+    %Note{note: chord_key, octave: new_octave} = Enum.at(scale, index)
 
     # Keep the same format as input - full tuple with octave
-    {{chord_key, octave}, chord_type}
+    {{chord_key, new_octave}, chord_type}
   end
   def roman_numeral_to_chord(sym, {%Note{note: key, octave: octave}, scale_type}) do
     roman_numeral_to_chord(sym, key, octave, scale_type)

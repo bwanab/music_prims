@@ -118,9 +118,9 @@ defmodule MusicPrimsTest do
       |> Enum.map(&(MidiNote.to_midi(&1)))
       assert result == [
         [19, 23, 26],  # G major chord
-        [12, 16, 19],  # C major chord
-        [16, 19, 23],  # E minor chord
-        [14, 18, 21]   # D major chord
+        [24, 28, 31],  # C major chord
+        [28, 31, 35],  # E minor chord
+        [26, 30, 33]   # D major chord
       ]
     end
 
