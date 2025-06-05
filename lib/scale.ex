@@ -43,7 +43,7 @@ defmodule Scale do
   @doc """
   Build a chromatic scale starting from the given note.
   """
-  @spec chromatic_scale(Note | {atom(), integer()}) :: [Note.t()]
+  @spec chromatic_scale(Note) :: scale()
   def chromatic_scale(%Note{} = note) do
     Enum.reduce(0..11, [note], fn _, [last | _] = acc ->
       next = next_half_step(last)
@@ -232,7 +232,7 @@ defmodule Scale do
        for :D :dorian, :major we would return :C
        for :D :dorian, :minor we would return :A
   """
-  @spec equivalent_key(atom, atom, atom) :: atom
+  @spec equivalent_key(atom, atom, atom) :: Note.t()
   def equivalent_key(key, key_mode, equivlent_mode) do
     index = @modes[equivlent_mode] - @modes[key_mode]
     Enum.at(modal_scale(key, 0, key_mode), index).note
