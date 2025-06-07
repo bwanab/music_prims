@@ -118,21 +118,24 @@ defmodule Chord do
   ## Returns
     * A new Chord struct
   """
-  @spec new(atom(), atom(), integer(), number(), integer()) :: Sonority.t()
-  def new(key, quality, octave \\ 3, duration \\ 1.0, inversion \\ 0) do
+  @spec new(atom(), atom(), integer(), number(), integer(), integer()) :: Sonority.t()
+  def new(key, quality, octave \\ 3, duration \\ 1.0, inversion \\ 0, velocity \\ 100) do
     notes = get_standard_notes(key, quality, octave)
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
+    inverted_notes = Enum.map(inverted_notes, fn n -> Note.copy(n, velocity: velocity) end)
 
     %__MODULE__{
       root: key,
       quality: quality,
       notes: inverted_notes,
       duration: duration,
-      inversion: inversion
+      inversion: inversion,
+      velocity: velocity
     }
   end
+
 
   def copy(chord, opts \\ []) do
     root = Keyword.get(opts, :root, chord.root)
