@@ -30,6 +30,9 @@ defprotocol Sonority do
   @spec to_notes(t()) :: [Sonority.t()]
   def to_notes(s)
 
+  @spec channel(t()) :: Integer
+  def channel(s)
+
   @doc """
   Gets the type of a Sonority.
 

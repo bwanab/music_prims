@@ -16,10 +16,11 @@ defmodule Chord do
     additions: [Note.t()] | nil,
     omissions: [integer()] | nil,
     inversion: integer(),
-    velocity: integer()
+    velocity: integer(),
+    channel: integer()
   } | Sonority.t()
 
-  defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :inversion, :velocity]
+  defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :inversion, :velocity, :channel]
 
 
   # Helper function to apply chord inversion
@@ -77,13 +78,18 @@ defmodule Chord do
   @spec new([Note.t()], integer()) :: Sonority.t()
   def new(notes, duration) when is_list(notes) do
     notes = Enum.map(notes, fn n -> Note.copy(n, duration: duration, velocity: n.velocity) end)
+    velocity = floor(Enum.sum(Enum.map(notes, fn n -> n.velocity end)) / length(notes))
+    [first | _] = notes
+    channel = first.channel
     {inferred_root, inferred_quality, inversion} = infer_chord_type(notes)
     %__MODULE__{
       notes: notes,
       root: inferred_root,
       quality: inferred_quality,
       duration: duration,
-      inversion: inversion
+      inversion: inversion,
+      velocity: velocity,
+      channel: channel
     }
   end
 
@@ -119,7 +125,7 @@ defmodule Chord do
     * A new Chord struct
   """
   @spec new(atom(), atom(), integer(), number(), integer(), integer()) :: Sonority.t()
-  def new(key, quality, octave \\ 3, duration \\ 1.0, inversion \\ 0, velocity \\ 100) do
+  def new(key, quality, octave \\ 3, duration \\ 1.0, inversion \\ 0, velocity \\ 100, channel \\ 0) do
     notes = get_standard_notes(key, quality, octave)
 
     # Apply inversion if needed
@@ -132,7 +138,8 @@ defmodule Chord do
       notes: inverted_notes,
       duration: duration,
       inversion: inversion,
-      velocity: velocity
+      velocity: velocity,
+      channel: channel
     }
   end
 
@@ -143,8 +150,9 @@ defmodule Chord do
     octave = Keyword.get(opts, :octave, octave(chord))
     duration = Keyword.get(opts, :duration, chord.duration)
     inversion = Keyword.get(opts, :inversion, chord.inversion)
-
-    Chord.new(root, quality, octave, duration, inversion)
+    velocity = Keyword.get(opts, :velocity, chord.velocity)
+    channel = Keyword.get(opts, :channel, chord.channel)
+    Chord.new(root, quality, octave, duration, inversion, velocity, channel)
   end
 
   def octave(chord) do
@@ -240,8 +248,10 @@ defmodule Chord do
       :major
       iex> chord.inversion
       1
+
+      TODO: change this to uses Keyword opts for octave,duration,...
   """
-  def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major, inversion \\ 0) do
+  def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major, inversion \\ 0, channel \\ 0) do
     # Convert Roman numeral to chord using ChordPrims
     chord_sym = roman_numeral_to_chord(roman_numeral, key, octave, scale_type)
 
@@ -260,7 +270,8 @@ defmodule Chord do
       quality: quality,
       notes: inverted_notes,
       duration: duration,
-      inversion: inversion
+      inversion: inversion,
+      channel: channel
     }
   end
 
@@ -355,6 +366,9 @@ defmodule Chord do
       Enum.map(notes_with_additions, fn n -> Note.copy(n, duration: chord.duration, velocity: n.velocity) end)
     end
 
+    def channel(chord) do
+      chord.channel
+    end
 
   end
 

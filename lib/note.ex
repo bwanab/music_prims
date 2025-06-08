@@ -8,12 +8,13 @@ defmodule Note do
     note: atom(),
     octave: integer(),
     duration: number(),
-    velocity: integer()
+    velocity: integer(),
+    channel: integer()
   }
 
   @type scale :: [t()]
 
-  defstruct [:note, :octave, :duration, :velocity]
+  defstruct [:note, :octave, :duration, :velocity, :channel]
 
 
   # Circle of fifths and key mapping
@@ -25,8 +26,8 @@ defmodule Note do
   # @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
 
-  def new(key, octave \\ 3, duration \\ 1.0, velocity \\ 100) do
-    %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity}
+  def new(key, octave \\ 3, duration \\ 1.0, velocity \\ 100, channel \\ 0) do
+    %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}
   end
 
   @spec copy(Note.t(), keyword()) :: Note.t()
@@ -189,6 +190,10 @@ defmodule Note do
 
     def to_notes(note) do
       [note]
+    end
+
+    def channel(note) do
+      note.channel
     end
   end
 end

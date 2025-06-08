@@ -24,10 +24,11 @@ defmodule Arpeggio do
   @type t :: %__MODULE__{
     chord: Chord.t(),
     pattern: pattern(),
-    duration: number()
+    duration: number(),
+    channel: Integer
   }
 
-  defstruct [:chord, :pattern, :duration]
+  defstruct [:chord, :pattern, :duration, :channel]
 
   # def arpeggiate(notes, pattern) do
   #   case pattern do
@@ -81,6 +82,10 @@ defmodule Arpeggio do
     defp to_notes(arpeggio, pattern) do
       notes = Sonority.to_notes(arpeggio.chord) |> Enum.map(fn n -> Note.copy(n, duration: arpeggio.duration) end)
       Enum.map(pattern, fn p -> Enum.at(notes, p - 1) end)
+    end
+
+    def channel(arpeggio) do
+      arpeggio.chord.channel
     end
 
   end

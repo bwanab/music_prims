@@ -1,15 +1,17 @@
 defmodule Rest do
   @type t :: %__MODULE__{
       duration: number(),
+      channel: Integer
   }
 
-  defstruct [:duration]
+  defstruct [:duration, :channel]
 
-  @spec new(number()) :: Sonority.t()
-  def new(duration) do
+  @spec new(number(), Integer) :: Sonority.t()
+  def new(duration, channel \\ 0) do
     # Return the struct with specified values
     %__MODULE__{
       duration: duration,
+      channel: channel
     }
   end
 
@@ -30,6 +32,10 @@ defmodule Rest do
 
     def to_notes(r) do
       [r]
+    end
+
+    def channel(s) do
+      s.channel
     end
  end
 end
