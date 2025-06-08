@@ -30,7 +30,7 @@ defprotocol Sonority do
   @spec to_notes(t()) :: [Sonority.t()]
   def to_notes(s)
 
-  @spec channel(t()) :: Integer
+  @spec channel(t()) :: integer()
   def channel(s)
 
   @doc """

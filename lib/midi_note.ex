@@ -6,10 +6,11 @@ defmodule MidiNote do
   @type t :: %__MODULE__{
     note_number: integer,
     duration: number | nil,
-    velocity: integer
+    velocity: integer,
+    channel: integer
   }
 
-  defstruct [:note_number, :duration,  :velocity]
+  defstruct [:note_number, :duration,  :velocity, :channel]
 
 
   # Notes and MIDI mapping - reused from Note module
@@ -31,11 +32,12 @@ defmodule MidiNote do
   Convert a note to its MIDI note number, duration, and velocity.
   """
   @spec note_to_midi(Note.t) :: t
-  def note_to_midi(%Note{note: key, octave: octave, duration: duration, velocity: velocity}) do
+  def note_to_midi(%Note{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}) do
     %__MODULE__{
       note_number: @midi_notes_map[key] + (octave * 12),
       duration: duration,
-      velocity: velocity || 100
+      velocity: velocity || 100,
+      channel: channel || 0
     }
   end
 
@@ -78,19 +80,19 @@ defmodule MidiNote do
 
 
 
-  def midi_to_note(%__MODULE__{note_number: note_number, duration: duration, velocity: velocity}) do
-    midi_to_note(note_number, duration, velocity)
+  def midi_to_note(%__MODULE__{note_number: note_number, duration: duration, velocity: velocity, channel: channel}) do
+    midi_to_note(note_number, duration, velocity, channel)
   end
 
   @doc """
   Convert a MIDI note number to a Note struct.
   """
-  @spec midi_to_note(integer, number | nil, integer | nil) :: Note.t
-  def midi_to_note(note_number, number_of_quarter_notes, velocity \\ 100) do
+  @spec midi_to_note(integer, number | nil, integer | nil, integer) :: Note.t
+  def midi_to_note(note_number, number_of_quarter_notes, velocity \\ 100, channel \\ 0) do
     octave = div(note_number - 12, 12)
     key_index = rem(note_number - 12, 12)
     key = Enum.at(@notes, key_index)
-    Note.new(key, octave, number_of_quarter_notes, velocity)
+    Note.new(key, octave, number_of_quarter_notes, velocity, channel)
   end
 
   @doc """

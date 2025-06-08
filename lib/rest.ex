@@ -1,7 +1,7 @@
 defmodule Rest do
   @type t :: %__MODULE__{
       duration: number(),
-      channel: Integer
+      channel: integer()
   }
 
   defstruct [:duration, :channel]
