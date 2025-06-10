@@ -31,13 +31,14 @@ defmodule Note do
   end
 
   @spec copy(Note.t(), keyword()) :: Note.t()
-  def copy(%__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity}, opts \\ []) do
+  def copy(%__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}, opts \\ []) do
     # Handle nil values and defaults
     key = Keyword.get(opts, :key, key)
     octave = Keyword.get(opts, :octave, octave)
     duration = Keyword.get(opts, :duration, duration)
     velocity = Keyword.get(opts, :velocity, velocity)
-    Note.new(key, octave, duration, velocity)
+    channel = Keyword.get(opts, :channel, channel)
+    Note.new(key, octave, duration, velocity, channel)
   end
 
 

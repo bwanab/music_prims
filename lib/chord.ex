@@ -130,7 +130,7 @@ defmodule Chord do
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
-    inverted_notes = Enum.map(inverted_notes, fn n -> Note.copy(n, velocity: velocity) end)
+    inverted_notes = Enum.map(inverted_notes, fn n -> Note.copy(n, velocity: velocity, channel: channel) end)
 
     %__MODULE__{
       root: key,
@@ -363,7 +363,7 @@ defmodule Chord do
 
       # Handle bass note if specified (would need to ensure it's at the bottom)
       # For simplicity, we're not implementing this logic fully
-      Enum.map(notes_with_additions, fn n -> Note.copy(n, duration: chord.duration, velocity: n.velocity) end)
+      Enum.map(notes_with_additions, fn n -> Note.copy(n, duration: chord.duration, velocity: n.velocity, channel: chord.channel) end)
     end
 
     def channel(chord) do
