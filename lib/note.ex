@@ -30,17 +30,6 @@ defmodule Note do
     %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}
   end
 
-  @spec copy(Note.t(), keyword()) :: Note.t()
-  def copy(%__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}, opts \\ []) do
-    # Handle nil values and defaults
-    key = Keyword.get(opts, :key, key)
-    octave = Keyword.get(opts, :octave, octave)
-    duration = Keyword.get(opts, :duration, duration)
-    velocity = Keyword.get(opts, :velocity, velocity)
-    channel = Keyword.get(opts, :channel, channel)
-    Note.new(key, octave, duration, velocity, channel)
-  end
-
 
   @doc """
   Get the key from a note.
@@ -152,6 +141,18 @@ defmodule Note do
 
   # Implement the Sonority protocol
   defimpl Sonority do
+
+    def copy(%Note{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}, opts \\ []) do
+      # Handle nil values and defaults
+      key = Keyword.get(opts, :key, key)
+      octave = Keyword.get(opts, :octave, octave)
+      duration = Keyword.get(opts, :duration, duration)
+      velocity = Keyword.get(opts, :velocity, velocity)
+      channel = Keyword.get(opts, :channel, channel)
+      Note.new(key, octave, duration, velocity, channel)
+    end
+
+
     def duration(note), do: note.duration
     def type(_), do: :note
     @doc """

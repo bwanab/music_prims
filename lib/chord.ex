@@ -77,7 +77,7 @@ defmodule Chord do
   # Constructor from notes
   @spec new([Note.t()], integer()) :: Sonority.t()
   def new(notes, duration) when is_list(notes) do
-    notes = Enum.map(notes, fn n -> Note.copy(n, duration: duration, velocity: n.velocity) end)
+    notes = Enum.map(notes, fn n -> Sonority.copy(n, duration: duration, velocity: n.velocity) end)
     velocity = floor(Enum.sum(Enum.map(notes, fn n -> n.velocity end)) / length(notes))
     [first | _] = notes
     channel = first.channel
@@ -130,7 +130,7 @@ defmodule Chord do
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
-    inverted_notes = Enum.map(inverted_notes, fn n -> Note.copy(n, velocity: velocity, channel: channel) end)
+    inverted_notes = Enum.map(inverted_notes, fn n -> Sonority.copy(n, velocity: velocity, channel: channel) end)
 
     %__MODULE__{
       root: key,
@@ -144,16 +144,6 @@ defmodule Chord do
   end
 
 
-  def copy(chord, opts \\ []) do
-    root = Keyword.get(opts, :root, chord.root)
-    quality = Keyword.get(opts, :quality, chord.quality)
-    octave = Keyword.get(opts, :octave, octave(chord))
-    duration = Keyword.get(opts, :duration, chord.duration)
-    inversion = Keyword.get(opts, :inversion, chord.inversion)
-    velocity = Keyword.get(opts, :velocity, chord.velocity)
-    channel = Keyword.get(opts, :channel, chord.channel)
-    Chord.new(root, quality, octave, duration, inversion, velocity, channel)
-  end
 
   def octave(chord) do
     Enum.at(Sonority.to_notes(chord), 0).octave
@@ -328,6 +318,17 @@ defmodule Chord do
 
   # Implement the Sonority protocol
   defimpl Sonority do
+    def copy(chord, opts \\ []) do
+      root = Keyword.get(opts, :root, chord.root)
+      quality = Keyword.get(opts, :quality, chord.quality)
+      octave = Keyword.get(opts, :octave, Chord.octave(chord))
+      duration = Keyword.get(opts, :duration, chord.duration)
+      inversion = Keyword.get(opts, :inversion, chord.inversion)
+      velocity = Keyword.get(opts, :velocity, chord.velocity)
+      channel = Keyword.get(opts, :channel, chord.channel)
+      Chord.new(root, quality, octave, duration, inversion, velocity, channel)
+    end
+
     def duration(chord), do: chord.duration
     def type(_), do: :chord
 
@@ -363,7 +364,7 @@ defmodule Chord do
 
       # Handle bass note if specified (would need to ensure it's at the bottom)
       # For simplicity, we're not implementing this logic fully
-      Enum.map(notes_with_additions, fn n -> Note.copy(n, duration: chord.duration, velocity: n.velocity, channel: chord.channel) end)
+      Enum.map(notes_with_additions, fn n -> Sonority.copy(n, duration: chord.duration, velocity: n.velocity, channel: chord.channel) end)
     end
 
     def channel(chord) do
@@ -676,7 +677,16 @@ def get_intervals(notes) do
   |> Enum.sort()
 end
 
-def get_matches(notes) do
+def get_matches(raw_notes) do
+  # first, consolidate the notes to get rid of duplicate notes in different octaves
+  {notes, _} = Enum.reduce(raw_notes, {[], MapSet.new([])}, fn n, {note_acc, nset} ->
+    if MapSet.member?(nset, n.note) do
+      {note_acc, nset}
+    else
+      {note_acc ++ [n], MapSet.put(nset, n.note)}
+    end
+   end)
+
   get_note_nums = fn notes ->
     note_nums = Enum.map(notes, &MidiNote.note_to_midi(&1).note_number)
     min = Enum.min(note_nums)
@@ -687,7 +697,7 @@ def get_matches(notes) do
       0..(length(notes) - 1),
       fn rotation_index ->
         rotated_notes = Scale.rotate_notes(notes, rotation_index)
-        intervals = get_note_nums.(rotated_notes)
+        intervals = get_note_nums.(rotated_notes) |> Enum.sort
         chord_type = Map.get(MusicPrims.chord_interval_map(), intervals)
         {rotation_index, chord_type, rotated_notes}
       end

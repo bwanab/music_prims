@@ -18,7 +18,6 @@ defmodule Arpeggio do
 
   Like Note, Chord and Rest, Arpeggio will implement the Sonority protocol.
   """
-
   @type pattern :: :up | :down | :up_down | :down_up | [integer()]
 
   @type t :: %__MODULE__{
@@ -46,8 +45,8 @@ defmodule Arpeggio do
   #   |> Arpeggio.new(duration)
   # end
 
-  def new(chord, pattern, duration) do
-    %Arpeggio{chord: chord, pattern: pattern, duration: duration}
+  def new(chord, pattern, duration, channel \\ 0) do
+    %Arpeggio{chord: chord, pattern: pattern, duration: duration, channel: channel}
   end
 
 
@@ -56,6 +55,14 @@ defmodule Arpeggio do
   end
 
   defimpl Sonority do
+    def copy(arpeggio, opts \\ []) do
+      chord = Keyword.get(opts, :chord, arpeggio.chord)
+      pattern = Keyword.get(opts, :pattern, arpeggio.pattern)
+      duration = Keyword.get(opts, :duration, arpeggio.duration)
+      channel = Keyword.get(opts, :channel, arpeggio.channel)
+      Arpeggio.new(chord, pattern, duration, channel)
+    end
+
     def duration(arpeggio), do: arpeggio.duration
     def type(_), do: :arpeggio
 
@@ -80,12 +87,14 @@ defmodule Arpeggio do
     end
 
     defp to_notes(arpeggio, pattern) do
-      notes = Sonority.to_notes(arpeggio.chord) |> Enum.map(fn n -> Note.copy(n, duration: arpeggio.duration) end)
+      notes = Sonority.to_notes(arpeggio.chord) |> Enum.map(fn n ->
+        Sonority.copy(n, duration: arpeggio.duration, channel: arpeggio.channel)
+      end)
       Enum.map(pattern, fn p -> Enum.at(notes, p - 1) end)
     end
 
     def channel(arpeggio) do
-      arpeggio.chord.channel
+      arpeggio.channel
     end
 
   end

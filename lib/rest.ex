@@ -6,7 +6,7 @@ defmodule Rest do
 
   defstruct [:duration, :channel]
 
-  @spec new(number(), Integer) :: Sonority.t()
+  @spec new(number(), integer()) :: Sonority.t()
   def new(duration, channel \\ 0) do
     # Return the struct with specified values
     %__MODULE__{
@@ -20,6 +20,12 @@ defmodule Rest do
   end
 
   defimpl Sonority do
+    def copy(rest, opts \\ []) do
+      duration = Keyword.get(opts, :duration, rest.duration)
+      channel = Keyword.get(opts, :channel, rest.channel)
+      Rest.new(duration, channel)
+    end
+
     def duration(rest) do
       rest.duration
     end

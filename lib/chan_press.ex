@@ -16,6 +16,12 @@ defmodule ChanPress do
 
   # Implement the Sonority protocol
   defimpl Sonority do
+    def copy(chan_press, opts \\ []) do
+      value = Keyword.get(opts, :value, chan_press.value)
+      channel = Keyword.get(opts, :channel, chan_press.channel)
+      ChanPress.new(value, channel)
+    end
+
     def duration(_cp), do: 0
     def type(_), do: :chan_press
     def show(_cp, _opts), do: ""

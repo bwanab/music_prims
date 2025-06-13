@@ -18,6 +18,10 @@ defprotocol Sonority do
 
   Dealing with these will be at a later iteration.
 """
+
+  @spec copy(t(), Keyword.t()) :: Sonority.t()
+  def copy(s, opts \\ [])
+
   @spec duration(t()) :: number()
   def duration(s)
 

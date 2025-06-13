@@ -17,6 +17,13 @@ defmodule PolyPress do
 
   # Implement the Sonority protocol
   defimpl Sonority do
+    def copy(poly_press, opts \\ []) do
+      note_number = Keyword.get(opts, :note_number, poly_press.note_number)
+      value = Keyword.get(opts, :value, poly_press.value)
+      channel = Keyword.get(opts, :channel, poly_press.channel)
+      PolyPress.new(channel, note_number, value)
+    end
+
     def duration(_pp), do: 0
     def type(_), do: :poly_press
     def show(_pp, _opts), do: ""
