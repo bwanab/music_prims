@@ -697,7 +697,7 @@ def get_matches(raw_notes) do
       0..(length(notes) - 1),
       fn rotation_index ->
         rotated_notes = Scale.rotate_notes(notes, rotation_index)
-        intervals = get_note_nums.(rotated_notes) |> Enum.sort
+        intervals = get_note_nums.(rotated_notes)
         chord_type = Map.get(MusicPrims.chord_interval_map(), intervals)
         {rotation_index, chord_type, rotated_notes}
       end
