@@ -280,9 +280,12 @@ defmodule Chord do
     }
   end
 
+  @spec note_from_roman_numeral(atom, atom(), integer(), Scale.scale_type, Keyword.t()) :: Note.t()
   @doc """
     returns the note represented by the roman numeral for a given root key
     that is of the given scale type and octave.
+
+    The options are any of the options that Note.copy accepts
 
     Example:
     iex> note = Chord.note_from_roman_numeral(:IV, :A, 2, :major)
@@ -294,10 +297,11 @@ defmodule Chord do
     since :D in the 3rd octave is the 4th major scale note of A in the 2nd octave
 
   """
-  def note_from_roman_numeral(roman_numeral, key, octave, scale_type) do
+  def note_from_roman_numeral(roman_numeral, key, octave, scale_type \\ :major, opts \\ []) do
     Chord.roman_numeral_to_chord(roman_numeral, key, octave, scale_type)
     |> Chord.chord_to_notes()
     |> Enum.at(0)
+    |> Sonority.copy(opts)
   end
 
   @doc """
@@ -512,7 +516,7 @@ defmodule Chord do
     rotate_notes(chord, 3)
   end
 
-  #@spec roman_numeral_to_chord(atom(), {Note.t() | {atom(), integer()}, atom()}) :: chord
+  @spec roman_numeral_to_chord(atom(), atom(), integer(), Scale.scale_type()) :: chord
   def roman_numeral_to_chord(sym, key, octave, scale_type) do
     scale = if scale_type == :major do
       major_scale(key, octave)

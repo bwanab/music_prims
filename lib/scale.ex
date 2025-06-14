@@ -5,6 +5,8 @@ defmodule Scale do
 
   @type scale :: [Note.t()]
 
+  @type scale_type :: :major | :dorian | :phrygian | :lydian | :mixolodian | :minor | :locrian
+
   # Scale intervals
   @pent_intervals [0, 3, 5, 7, 10]
   @blues_intervals [0, 3, 5, 6, 7, 10]
