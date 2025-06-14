@@ -96,7 +96,7 @@ defmodule Scale do
   @spec build_note_seq(atom, [integer], integer) :: scale
   def build_note_seq(key, intervals, octave \\ 0) do
     map_by_flat_key(key)
-    |> Note.new(octave)
+    |> Note.new(octave: octave)
     |> chromatic_scale()
     |> raw_scale(intervals)
     # IO.inspect(rs)
@@ -144,8 +144,8 @@ defmodule Scale do
   def rotate_notes(notes, n) do
     {l, r} = Enum.split(notes, n)
     r ++ Enum.map(l, fn
-      %Note{note: key, octave: octave} -> Note.new(key, octave + 1)
-      {key, octave} -> Note.new(key, octave + 1)
+      %Note{note: key, octave: octave} -> Note.new(key, octave: octave + 1)
+      {key, octave} -> Note.new(key, octave: octave + 1)
     end)
   end
 
@@ -196,7 +196,7 @@ defmodule Scale do
   defp map_by_flat_key(nk) do
     if MapSet.member?(MapSet.new(@flats), Note.key_from_note(nk)) do
       new_key = Map.get(@sharp_key_map, Note.key_from_note(nk))
-      if is_tuple(nk), do: Note.new(new_key, elem(nk, 1)), else: new_key
+      if is_tuple(nk), do: Note.new(new_key, octave: elem(nk, 1)), else: new_key
     else
       nk
     end

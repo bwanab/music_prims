@@ -112,20 +112,29 @@ defmodule Chord do
   # end
 
   @doc """
-  Creates a chord from a root note, quality, and optional octave, duration and inversion.
+  Creates a chord from a root note, quality, and optional parameters via keyword list.
 
   ## Parameters
     * `key` - The root key of the chord
     * `quality` - The chord quality (e.g., :major, :minor)
-    * `octave` - The octave for the root note (default: 0)
-    * `duration` - The duration of the chord in beats (default: 1.0)
-    * `inversion` - The inversion degree (0 = root position, 1 = first, etc.) (default: 0)
+    * `opts` - Keyword list with optional parameters:
+      * `:octave` - The octave for the root note (default: 3)
+      * `:duration` - The duration of the chord in beats (default: 1.0)
+      * `:inversion` - The inversion degree (0 = root position, 1 = first, etc.) (default: 0)
+      * `:velocity` - The MIDI velocity (default: 100)
+      * `:channel` - The MIDI channel (default: 0)
 
   ## Returns
     * A new Chord struct
   """
-  @spec new(atom(), atom(), integer(), number(), integer(), integer()) :: Sonority.t()
-  def new(key, quality, octave \\ 3, duration \\ 1.0, inversion \\ 0, velocity \\ 100, channel \\ 0) do
+  @spec new(atom(), atom(), keyword()) :: Sonority.t()
+  def new(key, quality, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 3)
+    duration = Keyword.get(opts, :duration, 1.0)
+    inversion = Keyword.get(opts, :inversion, 0)
+    velocity = Keyword.get(opts, :velocity, 100)
+    channel = Keyword.get(opts, :channel, 0)
+
     notes = get_standard_notes(key, quality, octave)
 
     # Apply inversion if needed
@@ -193,31 +202,33 @@ defmodule Chord do
   end
 
   @doc """
-  Creates a chord from a Roman numeral, key, and optional octave, duration, scale type, and inversion.
+  Creates a chord from a Roman numeral, key, and optional parameters via keyword list.
 
   This function allows direct creation of chords from Roman numerals in a specific key.
 
   ## Parameters
     * `roman_numeral` - The Roman numeral symbol (e.g., :I, :ii, :V7)
     * `key` - The key to interpret the Roman numeral in (e.g., :C for C major)
-    * `octave` - The octave for the root note (default: 4)
-    * `duration` - The duration of the chord in beats (default: 1.0)
-    * `scale_type` - The scale type (:major or :minor) to interpret the Roman numeral in (default: :major)
-    * `inversion` - The inversion degree (0 = root position, 1 = first, etc.) (default: 0)
+    * `opts` - Keyword list with optional parameters:
+      * `:octave` - The octave for the root note (default: 4)
+      * `:duration` - The duration of the chord in beats (default: 1.0)
+      * `:scale_type` - The scale type (:major or :minor) to interpret the Roman numeral in (default: :major)
+      * `:inversion` - The inversion degree (0 = root position, 1 = first, etc.) (default: 0)
+      * `:channel` - The MIDI channel (default: 0)
 
   ## Returns
     * A new Chord struct
 
   ## Examples
       # Creates a C major chord (I in C major) in octave 4 with duration 4.0
-      iex> chord = Chord.from_roman_numeral(:I, :C, 4, 4.0)
+      iex> chord = Chord.from_roman_numeral(:I, :C, octave: 4, duration: 4.0)
       iex> chord.root
       :C
       iex> chord.quality
       :major
 
       # Creates a D dominant seventh chord (V7 in G major) in octave 3 with duration 2.0
-      iex> chord = Chord.from_roman_numeral(:V7, :G, 3, 2.0)
+      iex> chord = Chord.from_roman_numeral(:V7, :G, octave: 3, duration: 2.0)
       iex> chord.root
       :D
       iex> chord.quality
@@ -225,23 +236,27 @@ defmodule Chord do
 
       # Creates a D# major chord (III in C minor) in octave 4 with duration 1.0
       # Note: D# is enharmonic with Eb but our implementation uses D#
-      iex> chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      iex> chord = Chord.from_roman_numeral(:III, :C, octave: 4, duration: 1.0, scale_type: :minor)
       iex> Note.enharmonic_equal?(chord.root, :D!)
       iex> chord.quality
       :major
 
       # Creates a first inversion C major chord (I⁶ in C major) in octave 4 with duration 1.0
-      iex> chord = Chord.from_roman_numeral(:I, :C, 4, 1.0, :major, 1)
+      iex> chord = Chord.from_roman_numeral(:I, :C, octave: 4, duration: 1.0, scale_type: :major, inversion: 1)
       iex> chord.root
       :C
       iex> chord.quality
       :major
       iex> chord.inversion
       1
-
-      TODO: change this to uses Keyword opts for octave,duration,...
   """
-  def from_roman_numeral(roman_numeral, key, octave \\ 4, duration \\ 1.0, scale_type \\ :major, inversion \\ 0, channel \\ 0) do
+  def from_roman_numeral(roman_numeral, key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 4)
+    duration = Keyword.get(opts, :duration, 1.0)
+    scale_type = Keyword.get(opts, :scale_type, :major)
+    inversion = Keyword.get(opts, :inversion, 0)
+    channel = Keyword.get(opts, :channel, 0)
+
     # Convert Roman numeral to chord using ChordPrims
     chord_sym = roman_numeral_to_chord(roman_numeral, key, octave, scale_type)
 
@@ -297,11 +312,11 @@ defmodule Chord do
 
   ## Examples
 
-      iex> chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      iex> chord = Chord.from_roman_numeral(:III, :C, octave: 4, duration: 1.0, scale_type: :minor)
       iex> Chord.has_root_enharmonic_with?(chord, :Eb)
       true
 
-      iex> chord = Chord.from_roman_numeral(:III, :C, 4, 1.0, :minor)
+      iex> chord = Chord.from_roman_numeral(:III, :C, octave: 4, duration: 1.0, scale_type: :minor)
       iex> Chord.has_root_enharmonic_with?(chord, {:Eb, 4})
       true
   """
@@ -326,7 +341,7 @@ defmodule Chord do
       inversion = Keyword.get(opts, :inversion, chord.inversion)
       velocity = Keyword.get(opts, :velocity, chord.velocity)
       channel = Keyword.get(opts, :channel, chord.channel)
-      Chord.new(root, quality, octave, duration, inversion, velocity, channel)
+      Chord.new(root, quality, octave: octave, duration: duration, inversion: inversion, velocity: velocity, channel: channel)
     end
 
     def duration(chord), do: chord.duration

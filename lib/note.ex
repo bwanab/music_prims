@@ -26,7 +26,25 @@ defmodule Note do
   # @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
 
-  def new(key, octave \\ 3, duration \\ 1.0, velocity \\ 100, channel \\ 0) do
+  @doc """
+  Creates a new Note with the given key and optional parameters via keyword list.
+
+  ## Parameters
+    * `key` - The note key (e.g., :C, :F!, :Bb)
+    * `opts` - Keyword list with optional parameters:
+      * `:octave` - The octave number (default: 3)
+      * `:duration` - The duration in beats (default: 1.0)
+      * `:velocity` - The MIDI velocity (default: 100)
+      * `:channel` - The MIDI channel (default: 0)
+
+  ## Returns
+    * A new Note struct
+  """
+  def new(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 3)
+    duration = Keyword.get(opts, :duration, 1.0)
+    velocity = Keyword.get(opts, :velocity, 100)
+    channel = Keyword.get(opts, :channel, 0)
     %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}
   end
 
@@ -94,14 +112,14 @@ defmodule Note do
   def enharmonic_equal?(note1, note2) do
     midi1 = case note1 do
       %Note{} -> MidiNote.to_midi(note1)
-      {key, octave} -> MidiNote.to_midi(new(key, octave))
-      _ -> MidiNote.to_midi(new(note1, 3))
+      {key, octave} -> MidiNote.to_midi(new(key, octave: octave))
+      _ -> MidiNote.to_midi(new(note1, octave: 3))
     end
 
     midi2 = case note2 do
       %Note{} -> MidiNote.to_midi(note2)
-      {key, octave} -> MidiNote.to_midi(new(key, octave))
-      _ -> MidiNote.to_midi(new(note2, 3))
+      {key, octave} -> MidiNote.to_midi(new(key, octave: octave))
+      _ -> MidiNote.to_midi(new(note2, octave: 3))
     end
 
     midi1 == midi2
@@ -149,7 +167,7 @@ defmodule Note do
       duration = Keyword.get(opts, :duration, duration)
       velocity = Keyword.get(opts, :velocity, velocity)
       channel = Keyword.get(opts, :channel, channel)
-      Note.new(key, octave, duration, velocity, channel)
+      Note.new(key, octave: octave, duration: duration, velocity: velocity, channel: channel)
     end
 
 

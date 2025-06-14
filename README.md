@@ -14,7 +14,7 @@ A collection of music primitives implemented in Elixir.
 
 ```elixir
 # Create a new note
-note = Note.new({:C, 4}, duration: 1, velocity: 100)
+note = Note.new(:C, octave: 4, duration: 1, velocity: 100)
 
 # Manipulate octaves
 MusicPrims.octave_up(note)  # Returns the same note one octave higher
@@ -40,26 +40,26 @@ f_minor = MusicPrims.minor_chord(:F, 3)  # F minor chord in octave 3
 g7 = MusicPrims.dominant_seventh_chord(:G, 3)  # G dominant 7th chord
 
 # Create chord with struct
-c_major_chord = Chord.new_from_root(:C, :major, 4)
-f_minor_chord = Chord.new_from_root(:F, :minor, 3)
+c_major_chord = Chord.new(:C, :major, octave: 4)
+f_minor_chord = Chord.new(:F, :minor, octave: 3)
 
 # Create chord with inversion
-c_major_first_inv = Chord.new_from_root(:C, :major, 4, 1.0, 1)  # First inversion
-g_dom7_third_inv = Chord.new_from_root(:G, :dominant_seventh, 3, 1.0, 3)  # Third inversion
+c_major_first_inv = Chord.new(:C, :major, octave: 4, duration: 1.0, inversion: 1)  # First inversion
+g_dom7_third_inv = Chord.new(:G, :dominant_seventh, octave: 3, duration: 1.0, inversion: 3)  # Third inversion
 
 # Chord from Roman numeral in a key
-c_major_I = Chord.from_roman_numeral(:I, :C, 4)  # C major chord (I chord in C major)
-g_dom7 = Chord.from_roman_numeral(:V7, :C, 4)  # G dominant 7th chord (V7 in C major)
-a_minor = Chord.from_roman_numeral(:vi, :C, 4)  # A minor chord (vi in C major)
+c_major_I = Chord.from_roman_numeral(:I, :C, octave: 4)  # C major chord (I chord in C major)
+g_dom7 = Chord.from_roman_numeral(:V7, :C, octave: 4)  # G dominant 7th chord (V7 in C major)
+a_minor = Chord.from_roman_numeral(:vi, :C, octave: 4)  # A minor chord (vi in C major)
 
 # Create an inverted chord from a Roman numeral
-c_major_I_first_inv = Chord.from_roman_numeral(:I, :C, 4, 1.0, :major, 1)  # First inversion
+c_major_I_first_inv = Chord.from_roman_numeral(:I, :C, octave: 4, duration: 1.0, scale_type: :major, inversion: 1)  # First inversion
 
 # Identify chord from notes
 notes = [
-  Note.new({:E, 4}),
-  Note.new({:G, 4}),
-  Note.new({:C, 5})
+  Note.new(:E, octave: 4),
+  Note.new(:G, octave: 4),
+  Note.new(:C, octave: 5)
 ]
 {{root, quality}, inversion} = ChordTheory.infer_chord_type(notes)  # Identifies as C major, first inversion
 

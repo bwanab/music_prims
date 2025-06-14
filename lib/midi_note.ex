@@ -92,7 +92,7 @@ defmodule MidiNote do
     octave = div(note_number - 12, 12)
     key_index = rem(note_number - 12, 12)
     key = Enum.at(@notes, key_index)
-    Note.new(key, octave, number_of_quarter_notes, velocity, channel)
+    Note.new(key, octave: octave, duration: number_of_quarter_notes, velocity: velocity, channel: channel)
   end
 
   @doc """
