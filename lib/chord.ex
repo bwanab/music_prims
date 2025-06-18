@@ -135,7 +135,7 @@ defmodule Chord do
     velocity = Keyword.get(opts, :velocity, 100)
     channel = Keyword.get(opts, :channel, 0)
 
-    notes = get_standard_notes(key, quality, octave)
+    notes = get_standard_notes(key, quality, octave: octave, channel: channel)
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
@@ -264,7 +264,7 @@ defmodule Chord do
     {{root, chord_octave}, quality} = chord_sym
 
     # Get standard notes for this chord
-    notes = get_standard_notes(root, quality, chord_octave)
+    notes = get_standard_notes(root, quality, octave: chord_octave, channel: channel)
 
     # Apply inversion if needed
     inverted_notes = apply_inversion(notes, inversion)
@@ -280,7 +280,7 @@ defmodule Chord do
     }
   end
 
-  @spec note_from_roman_numeral(atom, atom(), integer(), Scale.scale_type, Keyword.t()) :: Note.t()
+  @spec note_from_roman_numeral(atom(), atom(), integer(), Scale.scale_type, Keyword.t()) :: Note.t()
   @doc """
     returns the note represented by the roman numeral for a given root key
     that is of the given scale type and octave.
@@ -298,8 +298,8 @@ defmodule Chord do
 
   """
   def note_from_roman_numeral(roman_numeral, key, octave, scale_type \\ :major, opts \\ []) do
-    Chord.roman_numeral_to_chord(roman_numeral, key, octave, scale_type)
-    |> Chord.chord_to_notes()
+    {{chord_key, chord_octave}, chord_type} = Chord.roman_numeral_to_chord(roman_numeral, key, octave, scale_type)
+    Chord.chord_to_notes(chord_key, octave: chord_octave, scale_type: chord_type)
     |> Enum.at(0)
     |> Sonority.copy(opts)
   end
@@ -399,97 +399,121 @@ defmodule Chord do
   @doc """
   Build a major chord from the given key and octave.
   """
-  @spec major_chord(atom, integer) :: chord
-  def major_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 4, 7], octave)
+  @spec major_chord(atom, keyword) :: chord
+  def major_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 4, 7], octave: octave, channel: channel)
   end
 
   @doc """
   Build a minor chord from the given key and octave.
   """
-  @spec minor_chord(atom, integer) :: chord
-  def minor_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 3, 7], octave)
+  @spec minor_chord(atom, keyword) :: chord
+  def minor_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 3, 7], octave: octave, channel: channel)
   end
 
   @doc """
   Build an augmented chord from the given key and octave.
   """
-  @spec augmented_chord(atom, integer) :: chord
-  def augmented_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 4, 8], octave)
+  @spec augmented_chord(atom, keyword) :: chord
+  def augmented_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 4, 8], octave: octave, channel: channel)
   end
 
   @doc """
   Build a diminished chord from the given key and octave.
   """
-  @spec diminished_chord(atom, integer) :: chord
-  def diminished_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 3, 6], octave)
+  @spec diminished_chord(atom, keyword) :: chord
+  def diminished_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 3, 6], octave: octave, channel: channel)
   end
 
   @doc """
   Build a dominant seventh chord from the given key and octave.
   """
-  @spec dominant_seventh_chord(atom, integer) :: chord
-  def dominant_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 4, 7, 10], octave)
+  @spec dominant_seventh_chord(atom, keyword) :: chord
+  def dominant_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 4, 7, 10], octave: octave, channel: channel)
   end
 
   @doc """
   Build a major seventh chord from the given key and octave.
   """
-  @spec major_seventh_chord(atom, integer) :: chord
-  def major_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 4, 7, 11], octave)
+  @spec major_seventh_chord(atom, keyword) :: chord
+  def major_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 4, 7, 11], octave: octave, channel: channel)
   end
 
   @doc """
   Build a minor seventh chord from the given key and octave.
   """
-  @spec minor_seventh_chord(atom, integer) :: chord
-  def minor_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 3, 7, 10], octave)
+  @spec minor_seventh_chord(atom, keyword) :: chord
+  def minor_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 3, 7, 10], octave: octave, channel: channel)
   end
 
   @doc """
   Build a half-diminished seventh chord from the given key and octave.
   """
-  @spec half_diminshed_seventh_chord(atom, integer) :: chord
-  def half_diminshed_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 3, 6, 10], octave)
+  @spec half_diminshed_seventh_chord(atom, keyword) :: chord
+  def half_diminshed_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 3, 6, 10], octave: octave, channel: channel)
   end
 
   @doc """
   Build a diminished seventh chord from the given key and octave.
   """
-  @spec diminished_seventh_chord(atom, integer) :: chord
-  def diminished_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 3, 6, 9], octave)
+  @spec diminished_seventh_chord(atom, keyword) :: chord
+  def diminished_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 3, 6, 9], octave: octave, channel: channel)
   end
 
   @doc """
   Build a minor-major seventh chord from the given key and octave.
   """
-  @spec minor_major_seventh_chord(atom, integer) :: chord
-  def minor_major_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 3, 7, 11], octave)
+  @spec minor_major_seventh_chord(atom, keyword) :: chord
+  def minor_major_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 3, 7, 11], octave: octave, channel: channel)
   end
 
   @doc """
   Build an augmented major seventh chord from the given key and octave.
   """
-  @spec augmented_major_seventh_chord(atom, integer) :: chord
-  def augmented_major_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 4, 8, 11], octave)
+  @spec augmented_major_seventh_chord(atom, keyword) :: chord
+  def augmented_major_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 4, 8, 11], octave: octave, channel: channel)
   end
 
   @doc """
   Build an augmented seventh chord from the given key and octave.
   """
-  @spec augmented_seventh_chord(atom, integer) :: chord
-  def augmented_seventh_chord(key, octave \\ 0) do
-    build_note_seq(key, [0, 4, 8, 10], octave)
+  @spec augmented_seventh_chord(atom, keyword) :: chord
+  def augmented_seventh_chord(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, [0, 4, 8, 10], octave: octave, channel: channel)
   end
 
   @doc """
@@ -519,9 +543,9 @@ defmodule Chord do
   @spec roman_numeral_to_chord(atom(), atom(), integer(), Scale.scale_type()) :: chord
   def roman_numeral_to_chord(sym, key, octave, scale_type) do
     scale = if scale_type == :major do
-      major_scale(key, octave)
+      major_scale(key, octave: octave)
     else
-      minor_scale(key, octave)
+      minor_scale(key, octave: octave)
     end
     # Extract just the note names from the scale
     # note_names = scale |> Enum.map(fn
@@ -549,14 +573,12 @@ defmodule Chord do
     Enum.map(sym_seq, fn sym -> roman_numeral_to_chord(sym, key, octave, scale_type) end)
   end
 
-  @spec chord_to_notes(chord_sym) :: [Note.t()]
-  def chord_to_notes({{key, octave}, scale_type}) do
-    chord_type_map()[scale_type].(key, octave)
-  end
-
-  def chord_to_notes({key, scale_type}) when is_atom(key) and is_atom(scale_type) do
-    # Default to octave 0 if only key is given
-    chord_type_map()[scale_type].(key, 0)
+  @spec chord_to_notes(atom, keyword) :: [Note.t()]
+  def chord_to_notes(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    scale_type = Keyword.get(opts, :scale_type, :major)
+    channel = Keyword.get(opts, :channel, 0)
+    chord_type_map()[scale_type].(key, octave: octave, channel: channel)
   end
 
   @spec chords_to_notes([chord_sym]) :: [Note.t()]
@@ -665,27 +687,29 @@ defmodule Chord do
   ## Parameters
     * `key` - The root key of the chord
     * `quality` - The chord quality (e.g., :major, :minor, :dominant_seventh)
-    * `octave` - The octave for the root note (default: 0)
+    * `opts` - Keyword list with optional parameters:
+      * `:octave` - The octave for the root note (default: 0)
+      * `:channel` - The MIDI channel (default: 0)
 
   ## Returns
     * A list of Note structs representing the chord
   """
-  def get_standard_notes(key, quality, octave \\ 0) do
+  def get_standard_notes(key, quality, opts \\ []) do
     case quality do
-      :major -> Chord.major_chord(key, octave)
-      :minor -> Chord.minor_chord(key, octave)
-      :diminished -> Chord.diminished_chord(key, octave)
-      :augmented -> Chord.augmented_chord(key, octave)
-      :dominant_seventh -> Chord.dominant_seventh_chord(key, octave)
-      :major_seventh -> Chord.major_seventh_chord(key, octave)
-      :minor_seventh -> Chord.minor_seventh_chord(key, octave)
-      :half_diminished_seventh -> Chord.half_diminshed_seventh_chord(key, octave)
-      :diminished_seventh -> Chord.diminished_seventh_chord(key, octave)
-      :minor_major_seventh -> Chord.minor_major_seventh_chord(key, octave)
-      :augmented_major_seventh -> Chord.augmented_major_seventh_chord(key, octave)
-      :augmented_seventh -> Chord.augmented_seventh_chord(key, octave)
+      :major -> Chord.major_chord(key, opts)
+      :minor -> Chord.minor_chord(key, opts)
+      :diminished -> Chord.diminished_chord(key, opts)
+      :augmented -> Chord.augmented_chord(key, opts)
+      :dominant_seventh -> Chord.dominant_seventh_chord(key, opts)
+      :major_seventh -> Chord.major_seventh_chord(key, opts)
+      :minor_seventh -> Chord.minor_seventh_chord(key, opts)
+      :half_diminished_seventh -> Chord.half_diminshed_seventh_chord(key, opts)
+      :diminished_seventh -> Chord.diminished_seventh_chord(key, opts)
+      :minor_major_seventh -> Chord.minor_major_seventh_chord(key, opts)
+      :augmented_major_seventh -> Chord.augmented_major_seventh_chord(key, opts)
+      :augmented_seventh -> Chord.augmented_seventh_chord(key, opts)
       # Default to major if unknown quality
-      _ -> Chord.major_chord(key, octave)
+      _ -> Chord.major_chord(key, opts)
     end
   end
 

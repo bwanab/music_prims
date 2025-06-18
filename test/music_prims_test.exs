@@ -44,12 +44,12 @@ defmodule MusicPrimsTest do
       assert circle_of_4ths() == [:C, :F, :A!, :D!, :G!, :C!, :F!, :B, :E, :A, :D, :G]
     end
     test "first 5 notes of :C :major same as last 5 notes of :A :minor" do
-      assert normalize(major_scale(:C, 1) |> Enum.take(5)) ==
-        normalize(minor_scale(:A, 0) |> Enum.drop(2))
+      assert normalize(major_scale(:C, octave: 1) |> Enum.take(5)) ==
+        normalize(minor_scale(:A, octave: 0) |> Enum.drop(2))
     end
     test "last 6 notes of :C :major same as first 6 notes of :D :dorian" do
-      assert normalize(major_scale(:C, 1) |> Enum.drop(1)) ==
-        normalize(modal_scale(:D, 1, :dorian) |> Enum.take(6))
+      assert normalize(major_scale(:C, octave: 1) |> Enum.drop(1)) ==
+        normalize(modal_scale(:D, :dorian, octave: 1) |> Enum.take(6))
     end
     test "first 3 notes of pentatonic same as first 3 notes of blues" do
       assert normalize(pent_scale(:A) |> Enum.take(3)) ==
@@ -94,13 +94,13 @@ defmodule MusicPrimsTest do
     end
 
     test "bump_octave down on all notes" do
-      assert normalize(major_chord(:C, 1) |> Note.bump_octave(:down)) == [C: 0, E: 0, G: 0]
-      assert normalize(major_chord(:F, 1) |> Note.bump_octave(:down)) == [F: 0, A: 0, C: 1]
+      assert normalize(major_chord(:C, octave: 1) |> Note.bump_octave(:down)) == [C: 0, E: 0, G: 0]
+      assert normalize(major_chord(:F, octave: 1) |> Note.bump_octave(:down)) == [F: 0, A: 0, C: 1]
     end
 
     test "bump_octave on single position" do
       assert normalize(major_chord(:C) |> Note.bump_octave(1, :up)) == [C: 0, E: 1, G: 0]
-      assert normalize(major_chord(:F, 1) |> Note.bump_octave(2, :down)) == [F: 1, A: 1, C: 1]
+      assert normalize(major_chord(:F, octave: 1) |> Note.bump_octave(2, :down)) == [F: 1, A: 1, C: 1]
     end
 
     test "scale tests chord sequence reification" do
@@ -114,7 +114,9 @@ defmodule MusicPrimsTest do
     end
 
     test "scale tests chord sequence reification and to midi" do
-      result = Enum.map(roman_numerals_to_chords([:I, :IV, :vi, :V], :G, 0, :major), &(chord_to_notes(&1)))
+      result = Enum.map(roman_numerals_to_chords([:I, :IV, :vi, :V], :G, 0, :major), fn {{key, octave}, scale_type} ->
+        chord_to_notes(key, octave: octave, scale_type: scale_type)
+      end)
       |> Enum.map(&(MidiNote.to_midi(&1)))
       assert result == [
         [19, 23, 26],  # G major chord
@@ -157,19 +159,19 @@ defmodule MusicPrimsTest do
 
     test "modal_scale generates correct scales for different modes" do
       # C major scale
-      assert normalize(modal_scale(:C, 0, :major)) == [C: 0, D: 0, E: 0, F: 0, G: 0, A: 0, B: 0]
+      assert normalize(modal_scale(:C, :major, octave: 0)) == [C: 0, D: 0, E: 0, F: 0, G: 0, A: 0, B: 0]
 
       # D dorian scale (should be same notes as C major)
-      assert normalize(modal_scale(:D, 0, :dorian)) == [D: 0, E: 0, F: 0, G: 0, A: 0, B: 0, C: 1]
+      assert normalize(modal_scale(:D, :dorian, octave: 0)) == [D: 0, E: 0, F: 0, G: 0, A: 0, B: 0, C: 1]
 
       # A minor scale (should be same notes as C major)
-      assert normalize(modal_scale(:A, 0, :minor)) == [A: 0, B: 0, C: 1, D: 1, E: 1, F: 1, G: 1]
+      assert normalize(modal_scale(:A, :minor, octave: 0)) == [A: 0, B: 0, C: 1, D: 1, E: 1, F: 1, G: 1]
 
       # G mixolydian scale (should be same notes as C major)
-      assert normalize(modal_scale(:G, 0, :mixolodian)) == [G: 0, A: 0, B: 0, C: 1, D: 1, E: 1, F: 1]
+      assert normalize(modal_scale(:G, :mixolodian, octave: 0)) == [G: 0, A: 0, B: 0, C: 1, D: 1, E: 1, F: 1]
 
       # E phrygian scale (should be same notes as C major)
-      assert normalize(modal_scale(:E, 0, :phrygian)) == [E: 0, F: 0, G: 0, A: 0, B: 0, C: 1, D: 1]
+      assert normalize(modal_scale(:E, :phrygian, octave: 0)) == [E: 0, F: 0, G: 0, A: 0, B: 0, C: 1, D: 1]
     end
   end
 

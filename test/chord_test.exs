@@ -324,7 +324,7 @@ defmodule ChordTest do
     end
 
     test "identifies a first inversion of a chord" do
-      notes = Chord.first_inversion(Chord.major_chord(:F, 3))
+      notes = Chord.first_inversion(Chord.major_chord(:F, octave: 3))
       {root_note, quality, inversion} = Chord.infer_chord_type(notes)
       assert root_note == :F
       assert quality == :major
@@ -333,7 +333,7 @@ defmodule ChordTest do
     end
 
     test "identifies a second inversion of a chord" do
-      notes = Chord.second_inversion(Chord.major_chord(:F, 3))
+      notes = Chord.second_inversion(Chord.major_chord(:F, octave: 3))
       {root_note, quality, inversion} = Chord.infer_chord_type(notes)
       assert root_note == :F
       assert quality == :major
@@ -368,7 +368,7 @@ defmodule ChordTest do
     end
 
     test "identifies a seventh chord in third inversion" do
-      notes = Chord.third_inversion(Chord.dominant_seventh_chord(:G, 3))
+      notes = Chord.third_inversion(Chord.dominant_seventh_chord(:G, octave: 3))
       {root_note, quality, inversion} = Chord.infer_chord_type(notes)
       assert root_note == :G
       assert quality == :dominant_seventh

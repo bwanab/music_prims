@@ -3,6 +3,9 @@ defmodule Scale do
   Functions for working with musical scales.
   """
 
+  # TODO: everywhere a note is created there needs to be an optional channel
+  # TODO: convert all these same functions to keyword opts instead of positional defaults
+
   @type scale :: [Note.t()]
 
   @type scale_type :: :major | :dorian | :phrygian | :lydian | :mixolodian | :minor | :locrian
@@ -25,8 +28,11 @@ defmodule Scale do
   # @normal_flat_key_map @flat_key_map |> Map.merge(%{:F! => :F!, :C! => :C!})
   @sharp_key_map Enum.zip(@flat_circle_of_fifths, @circle_of_fifths) |> Enum.into(%{})
 
-  def new(key, quality \\ :major, octave \\ 3) do
-    build_note_seq(key, @major_intervals |> rotate_zero(@modes[quality]), octave)
+  def new(key, opts \\ []) do
+    quality = Keyword.get(opts, :quality, :major)
+    octave = Keyword.get(opts, :octave, 3)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, @major_intervals |> rotate_zero(@modes[quality]), octave: octave, channel: channel)
   end
 
   def normal_flat_set() do
@@ -60,54 +66,61 @@ defmodule Scale do
     end)
     |> Enum.reverse()
   end
-  def chromatic_scale(key, octave) do
-    chromatic_scale(Note.new(key, octave))
+  def chromatic_scale(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 3)
+    channel = Keyword.get(opts, :channel, 0)
+    chromatic_scale(Note.new(key, octave: octave, channel: channel))
   end
 
   @doc """
   Build a scale from the given key and mode.
   """
-  @spec modal_scale(atom, integer, atom) :: scale
-  def modal_scale(key, octave, mode) do
-    build_note_seq(key, @major_intervals |> rotate_zero(@modes[mode]), octave)
+  @spec modal_scale(atom, atom, keyword) :: scale
+  def modal_scale(key, mode, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, @major_intervals |> rotate_zero(@modes[mode]), octave: octave, channel: channel)
   end
 
-  @spec major_scale(atom, integer) :: scale
-  def major_scale(key, octave \\ 0) do
-    build_note_seq(key, @major_intervals, octave)
+  @spec major_scale(atom, keyword) :: scale
+  def major_scale(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, @major_intervals, octave: octave, channel: channel)
   end
 
-  @spec minor_scale(atom, integer) :: scale
-  def minor_scale(key, octave \\ 0) do
-    build_note_seq(key, @major_intervals |> rotate_zero(@modes[:minor]), octave)
+  @spec minor_scale(atom, keyword) :: scale
+  def minor_scale(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, @major_intervals |> rotate_zero(@modes[:minor]), octave: octave, channel: channel)
   end
 
-  @spec blues_scale(atom, integer) :: scale
-  def blues_scale(key, octave \\ 0) do
-    build_note_seq(key, @blues_intervals, octave)
+  @spec blues_scale(atom, keyword) :: scale
+  def blues_scale(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, @blues_intervals, octave: octave, channel: channel)
   end
 
-  @spec pent_scale(atom, integer) :: scale
-  def pent_scale(key, octave \\ 0) do
-    build_note_seq(key, @pent_intervals, octave)
+  @spec pent_scale(atom, keyword) :: scale
+  def pent_scale(key, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
+    build_note_seq(key, @pent_intervals, octave: octave, channel: channel)
   end
 
   @doc """
   Build a sequence of notes from a key and intervals.
   """
-  @spec build_note_seq(atom, [integer], integer) :: scale
-  def build_note_seq(key, intervals, octave \\ 0) do
+  @spec build_note_seq(atom, [integer], keyword) :: scale
+  def build_note_seq(key, intervals, opts \\ []) do
+    octave = Keyword.get(opts, :octave, 0)
+    channel = Keyword.get(opts, :channel, 0)
     map_by_flat_key(key)
-    |> Note.new(octave: octave)
+    |> Note.new(octave: octave, channel: channel)
     |> chromatic_scale()
     |> raw_scale(intervals)
-    # IO.inspect(rs)
-    # raw_seq = map_by_key(rs, key)
-    # IO.inspect(raw_seq)
-    # # Convert to Note structs with quarter note durations (1) and velocity of 100
-    # Enum.map(raw_seq, fn raw_note ->
-    #   Note.new(raw_note, octave, 1, 100)
-    # end)
   end
 
   @doc """
@@ -146,7 +159,8 @@ defmodule Scale do
   def rotate_notes(notes, n) do
     {l, r} = Enum.split(notes, n)
     r ++ Enum.map(l, fn
-      %Note{note: key, octave: octave} -> Note.new(key, octave: octave + 1)
+      %Note{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel} -> 
+        Note.new(key, octave: octave + 1, duration: duration, velocity: velocity, channel: channel)
       {key, octave} -> Note.new(key, octave: octave + 1)
     end)
   end
@@ -204,29 +218,6 @@ defmodule Scale do
     end
   end
 
-  # defp map_by_key(seq, key) do
-  #   if MapSet.member?(MapSet.new(@normal_flat), Note.key_from_note(key)) do
-  #     Enum.map(seq, &map_by_sharp_key/1)
-  #   else
-  #     Enum.map(seq, &map_by_flat_key/1)
-  #   end
-  # end
-
-  # defp map_by_sharp_key(nk, context \\ :normal)
-  # defp map_by_sharp_key(%Note{note: {key, octave}} = note, context) do
-  #   mapped_key = map_by_sharp_key(key, context)
-  #   %{note | note: {mapped_key, octave}}
-  # end
-  # defp map_by_sharp_key(nk, context) do
-  #   key_map = if context == :normal, do: @normal_flat_key_map, else: @flat_key_map
-  #   k = case Map.get(key_map, Note.key_from_note(nk)) do
-  #     nil -> Note.key_from_note(nk)
-  #     val -> val
-  #   end
-  #   if is_tuple(nk), do: Note.new(k, elem(nk, 1)), else: k
-  # end
-
-
   @doc """
   Get the key for which notes for the given key and mode are the same.
   E.G. for :A, :minor, :major, we would return :C since the notes of A-minor are the
@@ -237,7 +228,7 @@ defmodule Scale do
   @spec equivalent_key(atom, atom, atom) :: Note.t()
   def equivalent_key(key, key_mode, equivlent_mode) do
     index = @modes[equivlent_mode] - @modes[key_mode]
-    Enum.at(modal_scale(key, 0, key_mode), index).note
+    Enum.at(modal_scale(key, key_mode, octave: 0), index).note
   end
 
 
