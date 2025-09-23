@@ -8,13 +8,14 @@ defmodule Note do
     note: atom(),
     octave: integer(),
     duration: number(),
+    staccato: boolean(),
     velocity: integer(),
     channel: integer()
   }
 
   @type scale :: [t()]
 
-  defstruct [:note, :octave, :duration, :velocity, :channel]
+  defstruct [:note, :octave, :duration, :staccato, :velocity, :channel]
 
 
   # Circle of fifths and key mapping
@@ -40,12 +41,14 @@ defmodule Note do
   ## Returns
     * A new Note struct
   """
+  @spec new(atom(), keyword()) :: t()
   def new(key, opts \\ []) do
     octave = Keyword.get(opts, :octave, 3)
     duration = Keyword.get(opts, :duration, 1.0)
+    staccato = Keyword.get(opts, :staccato, false)
     velocity = Keyword.get(opts, :velocity, 100)
     channel = Keyword.get(opts, :channel, 0)
-    %__MODULE__{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}
+    %__MODULE__{note: key, octave: octave, duration: duration, staccato: staccato, velocity: velocity, channel: channel}
   end
 
 
@@ -125,7 +128,7 @@ defmodule Note do
     midi1 == midi2
   end
 
-  @spec common_notes(MusicPrims.note_sequence, MusicPrims.note_sequence, boolean) :: integer
+  @spec common_notes([Note], [Note], atom) :: integer
   def common_notes(c1, c2, ignore_octave \\ :true)
 
   def common_notes(c1, c2, ignore_octave) when ignore_octave == :false do
@@ -160,14 +163,15 @@ defmodule Note do
   # Implement the Sonority protocol
   defimpl Sonority do
 
-    def copy(%Note{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel}, opts \\ []) do
+    def copy(%Note{note: key, octave: octave, duration: duration, staccato: staccato, velocity: velocity, channel: channel}, opts \\ []) do
       # Handle nil values and defaults
       key = Keyword.get(opts, :key, key)
       octave = Keyword.get(opts, :octave, octave)
       duration = Keyword.get(opts, :duration, duration)
+      staccato = Keyword.get(opts, :staccato, staccato)
       velocity = Keyword.get(opts, :velocity, velocity)
       channel = Keyword.get(opts, :channel, channel)
-      Note.new(key, octave: octave, duration: duration, velocity: velocity, channel: channel)
+      Note.new(key, octave: octave, duration: duration, staccato: staccato, velocity: velocity, channel: channel)
     end
 
 

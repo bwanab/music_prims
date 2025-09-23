@@ -12,6 +12,7 @@ defmodule Chord do
     quality: atom() | nil,
     notes: [Note.t()] | nil,
     duration: number(),
+    staccato: boolean(),
     bass_note: Note.t() | nil,
     additions: [Note.t()] | nil,
     omissions: [integer()] | nil,
@@ -20,7 +21,7 @@ defmodule Chord do
     channel: integer()
   } | Sonority.t()
 
-  defstruct [:root, :quality, :notes, :duration, :bass_note, :additions, :omissions, :inversion, :velocity, :channel]
+  defstruct [:root, :quality, :notes, :duration, :staccato, :bass_note, :additions, :omissions, :inversion, :velocity, :channel]
 
 
   # Helper function to apply chord inversion
@@ -87,6 +88,7 @@ defmodule Chord do
       root: inferred_root,
       quality: inferred_quality,
       duration: duration,
+      staccato: Enum.any?(notes, fn n -> n.staccato end),
       inversion: inversion,
       velocity: velocity,
       channel: channel
@@ -131,6 +133,7 @@ defmodule Chord do
   def new(key, quality, opts \\ []) do
     octave = Keyword.get(opts, :octave, 3)
     duration = Keyword.get(opts, :duration, 1.0)
+    staccato = Keyword.get(opts, :staccato, false)
     inversion = Keyword.get(opts, :inversion, 0)
     velocity = Keyword.get(opts, :velocity, 100)
     channel = Keyword.get(opts, :channel, 0)
@@ -146,6 +149,7 @@ defmodule Chord do
       quality: quality,
       notes: inverted_notes,
       duration: duration,
+      staccato: staccato,
       inversion: inversion,
       velocity: velocity,
       channel: channel
@@ -253,6 +257,7 @@ defmodule Chord do
   def from_roman_numeral(roman_numeral, key, opts \\ []) do
     octave = Keyword.get(opts, :octave, 4)
     duration = Keyword.get(opts, :duration, 1.0)
+    staccato = Keyword.get(opts, :staccato, false)
     scale_type = Keyword.get(opts, :scale_type, :major)
     inversion = Keyword.get(opts, :inversion, 0)
     channel = Keyword.get(opts, :channel, 0)
@@ -275,6 +280,7 @@ defmodule Chord do
       quality: quality,
       notes: inverted_notes,
       duration: duration,
+      staccato: staccato,
       inversion: inversion,
       channel: channel
     }
@@ -342,10 +348,11 @@ defmodule Chord do
       quality = Keyword.get(opts, :quality, chord.quality)
       octave = Keyword.get(opts, :octave, Chord.octave(chord))
       duration = Keyword.get(opts, :duration, chord.duration)
+      staccato = Keyword.get(opts, :staccato, chord.staccato)
       inversion = Keyword.get(opts, :inversion, chord.inversion)
       velocity = Keyword.get(opts, :velocity, chord.velocity)
       channel = Keyword.get(opts, :channel, chord.channel)
-      Chord.new(root, quality, octave: octave, duration: duration, inversion: inversion, velocity: velocity, channel: channel)
+      Chord.new(root, quality, octave: octave, duration: duration, staccato: staccato, inversion: inversion, velocity: velocity, channel: channel)
     end
 
     def duration(chord), do: chord.duration
@@ -383,7 +390,7 @@ defmodule Chord do
 
       # Handle bass note if specified (would need to ensure it's at the bottom)
       # For simplicity, we're not implementing this logic fully
-      Enum.map(notes_with_additions, fn n -> Sonority.copy(n, duration: chord.duration, velocity: n.velocity, channel: chord.channel) end)
+      Enum.map(notes_with_additions, fn n -> Sonority.copy(n, duration: chord.duration, staccato: chord.staccato, velocity: n.velocity, channel: chord.channel) end)
     end
 
     def channel(chord) do
