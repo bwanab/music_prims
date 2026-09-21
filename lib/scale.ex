@@ -51,7 +51,7 @@ defmodule Scale do
   @doc """
   Build a chromatic scale starting from the given note.
   """
-  @spec chromatic_scale(Note) :: scale()
+  @spec chromatic_scale(Note.t()) :: scale
   def chromatic_scale(%Note{} = note) do
     Enum.reduce(0..11, [note], fn _, [last | _] = acc ->
       next = next_half_step(last)
@@ -66,6 +66,7 @@ defmodule Scale do
     end)
     |> Enum.reverse()
   end
+  @spec chromatic_scale(atom(), keyword()) :: scale
   def chromatic_scale(key, opts \\ []) do
     octave = Keyword.get(opts, :octave, 3)
     channel = Keyword.get(opts, :channel, 0)
@@ -159,7 +160,7 @@ defmodule Scale do
   def rotate_notes(notes, n) do
     {l, r} = Enum.split(notes, n)
     r ++ Enum.map(l, fn
-      %Note{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel} -> 
+      %Note{note: key, octave: octave, duration: duration, velocity: velocity, channel: channel} ->
         Note.new(key, octave: octave + 1, duration: duration, velocity: velocity, channel: channel)
       {key, octave} -> Note.new(key, octave: octave + 1)
     end)
